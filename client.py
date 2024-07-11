@@ -9,22 +9,20 @@ class BrClient():
     def __init__(self, ip, port):
         self._ip = ip
         self._port = str(port)
+        self._socket = None
         self._read_list = []
         self._write_dict = {}
         self._data = {}
         self._running = False
 
     async def connect(self):
-        self._running = True
-        counter = 0
-        async with websockets.connect("ws://" + self._ip + ":" + self._port) as websocket:
-            while self._running:
-                await self.process_read_request(websocket)
-                await self.process_write_request(websocket)
-                counter = counter + 1
-                print(counter)
-                if counter > 200:
-                    self._running = False
+        try:
+            self._socket = await websockets.connect("ws://" + self._ip + ":" + self._port)
+            await self.process_read_request(self._socket)
+            await self.process_write_request(self._socket)
+            return True
+        except: # TODO specific exceptions
+            return False
 
     def read_cyclically(self, variable):
         if variable not in self._read_list:
