@@ -84,11 +84,20 @@ class BrClient():
 
     def process_write_response(self, response):
         return
+    
 
-client = BrClient(ip="localhost", port=8000)
-client.read_cyclically("LuxProg:counter")
-# client.read_cyclically("LuxProg:structuredCounter")
-# client.write("LuxProg:bonjour", "17")
-#client.write("LuxProg:reset", "1")
-#client.write("LuxProg:structuredCounter.counter1", "36")
-asyncio.run(client.connect())
+async def main():
+
+    client = BrClient(ip="localhost", port=8000)
+    client.read_cyclically("LuxProg:counter")
+    running = True
+    if await client.connect():
+        while running:
+            await asyncio.sleep(1)
+            client.read_cyclically("LuxProg:counter")
+
+    # client.read_cyclically("LuxProg:structuredCounter")
+    # client.write("LuxProg:bonjour", "17")
+    #client.write("LuxProg:reset", "1")
+    #client.write("LuxProg:structuredCounter.counter1", "36")
+asyncio.run(main())
