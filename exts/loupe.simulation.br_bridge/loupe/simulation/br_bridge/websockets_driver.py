@@ -3,7 +3,7 @@
   Copyright (c) 2024 Loupe
   https://loupe.team
   
-  This file is part of Omniverse_BuR_Bridge_Extension, licensed under the MIT License.
+  This file is part of Omniverse_BnR_Bridge_Extension, licensed under the MIT License.
   
 '''
 
