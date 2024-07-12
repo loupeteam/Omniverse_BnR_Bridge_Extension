@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Library xmlns="http://br-automation.co.at/AS/Library" Version="0.10.0" SubType="Binary">
+  <Files>
+    <File Description="Exported functions and function blocks">Hammers.fun</File>
+    <File Description="Exported data types">Hammers.typ</File>
+    <File Description="Exported constants">Hammers.var</File>
+    <File>cABS.h</File>
+    <File Description="Local data types">TempSensor.typ</File>
+    <File Type="File">CHANGELOG.md</File>
+  </Files>
+  <Dependencies>
+    <Dependency ObjectName="MTLookUp" />
+    <Dependency ObjectName="standard" />
+    <Dependency ObjectName="AsIOTime" />
+  </Dependencies>
+</Library>

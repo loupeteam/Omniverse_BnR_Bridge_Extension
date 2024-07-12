@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Library xmlns="http://br-automation.co.at/AS/Library" Version="0.15.0" SubType="Binary">
+  <Objects>
+    <Object Type="File" Description="Exported data types">StringExt.typ</Object>
+    <Object Type="File" Description="Exported constants">StringExt.var</Object>
+    <Object Type="File" Description="Exported functions and function blocks">StringExt.fun</Object>
+    <Object Type="File" Description="tlsf forward declaration file">tlsf.h</Object>
+    <Object Type="File" Description="Header for internal functions">internal.h</Object>
+    <Object Type="File">CHANGELOG.md</Object>
+  </Objects>
+  <Dependencies>
+    <Dependency ObjectName="astime" />
+    <Dependency ObjectName="AsBrStr" />
+    <Dependency ObjectName="AsBrWStr" />
+  </Dependencies>
+</Library>

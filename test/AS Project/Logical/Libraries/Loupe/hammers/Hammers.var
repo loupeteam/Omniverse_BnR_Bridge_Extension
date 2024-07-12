@@ -1,0 +1,14 @@
+(*
+ * File: Hammers.var
+ * Copyright (c) 2023 Loupe
+ * https://loupe.team
+ * 
+ * This file is part of Hammers, licensed under the MIT License.
+ * 
+  ********************************************************************
+ * Constants of library Hammers
+ ********************************************************************)
+VAR CONSTANT
+	HAM_NUM_SCALE_POINTS : USINT := 50;
+	HAM_MAI_SCALE_POINTS : USINT := HAM_NUM_SCALE_POINTS-1;
+END_VAR
