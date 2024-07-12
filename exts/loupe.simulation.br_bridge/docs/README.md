@@ -11,7 +11,7 @@ This is the preferred method. Open up the extensions manager by navigating to `W
 ### Install from source
 
 You can also install from source instead. In order to do so, follow these steps:
-- Clone the repo [here](https://github.com/loupeteam/Omniverse_BuR_Bridge_Extension).
+- Clone the repo [here](https://github.com/loupeteam/Omniverse_BnR_Bridge_Extension).
 - In your Omniverse app, open the extensions manager by navigating to `Window / Extensions`.
 - Open the general extension settings, and add a new entry into the `Extension Search Paths` table. This should be the local path to the root of the repo that was just cloned. 
 - Back in the extensions manager, search for `B&R BRIDGE`, and enable it. 
