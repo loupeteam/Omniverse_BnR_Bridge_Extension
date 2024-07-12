@@ -7,6 +7,9 @@
   
 '''
 
+import asyncio
+import websockets
+import json
 
 class WebsocketsDriver():
     """
@@ -15,22 +18,21 @@ class WebsocketsDriver():
     Attributes:
         ip (string): ip address of the PLC
         port (int): port of the PLC
+        connection (WebSocketClientProtocol):
         _read_names (list): A list of names for reading data.
         _read_struct_def (dict): A dictionary that maps names to structure definitions.
 
     """
 
-    def __init__(self, ip, port):             
+    def __init__(self):             
         """
         Initializes an instance of the WebsocketsDriver class.
 
-        Args:
-            ip (string): ip address of the PLC
-            port (int): port of the PLC
-
         """
-        self.ip = ip
-        self.port = port
+        self.ip = None
+        self.port = None
+        self._connection = None
+
         self._read_names = list()
         self._read_struct_def = dict()
 
@@ -50,7 +52,7 @@ class WebsocketsDriver():
             if name not in self._read_struct_def:
                 self._read_struct_def[name] = structure_def
 
-    def write_data(self, data : dict ):
+    async def write_data(self, data : dict ):
         """
         Writes data to the target device.
 
@@ -60,9 +62,14 @@ class WebsocketsDriver():
             data = {'MAIN:b_Execute': False, 'MAIN:str_TestString': 'Goodbye World', 'MAIN:r32_TestReal': 54.321}
 
         """
-        self._connection.write_list_by_name(data)
+        payload = {
+            "type": "write",
+            "data": data
+        }
+        payload_json = json.dumps(payload)
+        await self.connection.send(payload_json)
 
-    def read_data(self):
+    async def read_data(self):
         """
         Reads all variables from the cyclic read list.
 
@@ -70,11 +77,18 @@ class WebsocketsDriver():
             dict: A dictionary containing the parsed data.
 
         """
-        if self._read_names.__len__() > 0:
-            data = self._connection.read_list_by_name(self._read_names, structure_defs=self._read_struct_def)
-            parsed_data = dict()
-            for name in data.keys():
-                parsed_data = self._parse_name(parsed_data, name, data[name])
+        if self._read_names:
+            payload_obj = {
+                "type": "read",
+                "data": self._read_names
+            }
+            payload_json = json.dumps(payload_obj)
+            await self._connection.send(payload_json)
+            response_json = await self._connection.recv()
+            response_obj = json.loads(response_json)
+            if response_obj["type"] == "readresponse":
+                for name in response_obj["data"]:
+                    parsed_data = self._parse_name(parsed_data, name, response_obj[name])
         else:
             parsed_data = dict()        
         return parsed_data
@@ -121,24 +135,20 @@ class WebsocketsDriver():
                 name_dict[name_parts[0]] = value
         return name_dict
     
-    def connect(self, ip, port):
+    async def connect(self):
         """
         Connects to the target device.
 
-        Args:
-            ip (string): ip address of the PLC
-            port (int): port of the PLC
-
         """
-        
-        self._connection.open()
+        await self._connection.connect("ws://" + self.ip + ":" + self.port)
 
-    def disconnect(self):
+    async def disconnect(self):
         """
         Disconnects from the target device.
 
         """
-        self._connection.close()
+
+        await self._connection.close()
 
     def is_connected(self):
         """
@@ -148,10 +158,6 @@ class WebsocketsDriver():
             bool: True if the connection is open, False otherwise.
 
         """
-        try:
-            # TODO
-            return True
-        except Exception as e:
-            return False
+        return self.connection.open
 
 
