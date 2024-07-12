@@ -18,8 +18,6 @@ class BrClient():
     async def connect(self):
         try:
             self._socket = await websockets.connect("ws://" + self._ip + ":" + self._port)
-            await self.process_read_request(self._socket)
-            await self.process_write_request(self._socket)
             return True
         except: # TODO specific exceptions
             return False
@@ -84,7 +82,6 @@ class BrClient():
 
     def process_write_response(self, response):
         return
-    
 
 async def main():
 
@@ -93,7 +90,10 @@ async def main():
     running = True
     if await client.connect():
         while running:
-            await asyncio.sleep(1)
+            await client.process_read_request(client._socket)
+            await client.process_write_request(client._socket)
+            await asyncio.sleep(.1)
+            print('writing')
             client.read_cyclically("LuxProg:counter")
 
     # client.read_cyclically("LuxProg:structuredCounter")
