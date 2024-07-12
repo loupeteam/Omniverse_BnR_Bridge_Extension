@@ -1,0 +1,27 @@
+[core]
+reloadable = true
+order = 0
+
+[package]
+version = "0.1.0"
+category = "simulation"
+title = "B&R Bridge"
+description = "A bridge for connecting Omniverse to B&R PLCs over websockets"
+authors = ["Loupe"]
+repository = "https://github.com/loupeteam/Omniverse_BuR_Bridge_Extension"
+keywords = ["B&R", "Digital Twin", "Websockets", "PLC"]
+changelog = "docs/CHANGELOG.md"
+readme = "docs/README.md"
+preview_image = "data/preview.png"
+icon = "data/icon.png"
+
+[dependencies]
+"omni.kit.uiapp" = {}
+
+[python.pipapi]
+requirements = ['websockets', 'asyncio']
+use_online_index = true
+
+[[python.module]]
+name = "loupe.simulation.br_bridge"
+public = true
