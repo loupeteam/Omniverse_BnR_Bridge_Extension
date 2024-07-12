@@ -1,5 +1,5 @@
 {
-  "name": "websockettestplc",
+  "name": "luxprog",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@loupeteam/omjson": "^1.4.2",
+    "@loupeteam/luxprog": "^0.2.1",
     "@loupeteam/starterasproject49": "^1.0.0"
   },
   "lpmConfig": {

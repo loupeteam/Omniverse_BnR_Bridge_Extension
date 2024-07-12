@@ -1,5 +1,8 @@
+
 VAR
-	myVarLreal : LREAL := 3.14159;
-	myVarStruct : TIMEStructure;
-	myVarInt : INT := 41;
+
+END_VAR
+
+VAR CONSTANT
+
 END_VAR

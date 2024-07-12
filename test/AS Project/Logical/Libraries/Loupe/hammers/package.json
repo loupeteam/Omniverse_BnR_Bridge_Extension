@@ -1,0 +1,18 @@
+{
+  "name": "@loupeteam/hammers",
+  "version": "0.10.0",
+  "description": "Loupe's hammers library for Automation Runtime",
+  "homepage": "https://loupeteam.github.io/LoupeDocs/libraries/hammers.html",
+  "scripts": {},
+  "keywords": [],
+  "author": "Loupe",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/loupeteam/hammers"
+  },
+  "lpm": {
+    "type": "library"
+  },
+  "dependencies": {}
+}

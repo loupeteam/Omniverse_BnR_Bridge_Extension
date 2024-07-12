@@ -1,17 +1,15 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<?AutomationStudio FileVersion="4.9"?>
-<SwConfiguration CpuAddress="SL1" xmlns="http://br-automation.co.at/AS/SwConfiguration">
+<?xml version='1.0' encoding='utf-8'?>
+<SwConfiguration xmlns="http://br-automation.co.at/AS/SwConfiguration" CpuAddress="SL1">
   <TaskClass Name="Cyclic#1" />
   <TaskClass Name="Cyclic#2" />
   <TaskClass Name="Cyclic#3" />
-  <TaskClass Name="Cyclic#4">
-    <Task Name="OmjsonServ" Source="OmjsonServer.prg" Memory="UserROM" Language="IEC" Debugging="true" />
-    <Task Name="myProg" Source="myProg.prg" Memory="UserROM" Language="IEC" Debugging="true" />
-  </TaskClass>
+  <TaskClass Name="Cyclic#4" />
   <TaskClass Name="Cyclic#5" />
   <TaskClass Name="Cyclic#6" />
   <TaskClass Name="Cyclic#7" />
-  <TaskClass Name="Cyclic#8" />
+  <TaskClass Name="Cyclic#8">
+    <Task Name="LuxProg" Source="Lux.LuxProg.prg" Memory="UserROM" Language="IEC" Debugging="true" />
+  </TaskClass>
   <Binaries>
     <BinaryObject Name="udbdef" Source="" Memory="UserROM" Language="Binary" />
     <BinaryObject Name="TCData" Source="" Memory="SystemROM" Language="Binary" />
@@ -69,5 +67,6 @@
     <LibraryObject Name="databuffer" Source="Libraries.Loupe.databuffer.lby" Memory="UserROM" Language="Binary" Debugging="true" />
     <LibraryObject Name="tcpcomm" Source="Libraries.Loupe.tcpcomm.lby" Memory="UserROM" Language="Binary" Debugging="true" />
     <LibraryObject Name="websocket" Source="Libraries.Loupe.websocket.lby" Memory="UserROM" Language="Binary" Debugging="true" />
+    <LibraryObject Name="hammers" Source="Libraries.Loupe.hammers.lby" Memory="UserROM" Language="Binary" Debugging="true" />
   </Libraries>
 </SwConfiguration>

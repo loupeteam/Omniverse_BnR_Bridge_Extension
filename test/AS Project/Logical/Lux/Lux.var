@@ -1,0 +1,11 @@
+(*
+* File: Lux.var
+* Copyright (c) 2023 Loupe
+* https://loupe.team
+* 
+* This file is part of OMJSON, licensed under the MIT License.
+*)
+VAR
+	gWSTimeout : BOOL;
+	jsonWebSocketServer_0 : jsonWebSocketServer;
+END_VAR

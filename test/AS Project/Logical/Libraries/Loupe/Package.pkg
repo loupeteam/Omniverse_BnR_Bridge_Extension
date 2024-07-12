@@ -7,5 +7,6 @@
     <Object Type="Library" Language="Binary">databuffer</Object>
     <Object Type="Library" Language="Binary">tcpcomm</Object>
     <Object Type="Library" Language="Binary">websocket</Object>
+    <Object Type="Library" Language="Binary">hammers</Object>
   </Objects>
 </Package>
