@@ -53,7 +53,6 @@ from loupe.simulation.br_bridge import BRBridge
 # Instantiate the bridge
 br_bridge = BRBridge.Manager()
 
-
 # This function gets called once on init, and should be used to subscribe to cyclic reads.
 def on_plc_init( event ):
     # Create a list of variable names to be read cyclically, and add to Manager
@@ -68,7 +67,7 @@ def on_message( event ):
     # Read the event data, which includes values for the PLC variables requested
     data = event.payload['data']['MAIN']['custom_struct']['var_array']
 
-# In the app's cyclic logic, writes can be performed as follows:
+# In the app's cyclic logic (for example on_physics_step(), etc), writes can be performed as follows:
 def cyclic():
     # Write the value `1` to PLC variable 'MAIN.custom_struct.var1'
     br_bridge.write_variable('MAIN:custom_struct.var1', 1)

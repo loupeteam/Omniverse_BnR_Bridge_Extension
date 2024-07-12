@@ -220,6 +220,7 @@ class UIBuilder:
                 try:
                     if self.write_queue:                                             
                         with self.write_lock:
+                            # TODO would it be better if this was a deepcopy?
                             values = self.write_queue
                             self.write_queue = dict()
                         self._websockets_connector.write_data(values)
