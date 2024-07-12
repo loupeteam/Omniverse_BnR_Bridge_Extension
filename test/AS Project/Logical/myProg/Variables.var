@@ -1,0 +1,3 @@
+VAR
+	counter : USINT;
+END_VAR

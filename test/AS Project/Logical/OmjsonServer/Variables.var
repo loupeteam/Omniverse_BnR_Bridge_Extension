@@ -1,0 +1,8 @@
+VAR
+	jsonCache : ARRAY[0..2] OF jsonCache_typ := [(0), (0), (0)];
+	jsonWebSocketServer_0 : jsonWebSocketServer;
+END_VAR
+
+VAR CONSTANT
+
+END_VAR

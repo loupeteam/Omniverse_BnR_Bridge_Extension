@@ -1,0 +1,22 @@
+{
+  "name": "websockettestplc",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@loupeteam/omjson": "^1.4.2",
+    "@loupeteam/starterasproject49": "^1.0.0"
+  },
+  "lpmConfig": {
+    "deploymentConfigs": [
+      "StarterConfig"
+    ],
+    "gitClient": "GitExtensions"
+  }
+}
