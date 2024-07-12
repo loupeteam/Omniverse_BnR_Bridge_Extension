@@ -9,22 +9,18 @@ class BrClient():
     def __init__(self, ip, port):
         self._ip = ip
         self._port = str(port)
+        self._socket = None
         self._read_list = []
         self._write_dict = {}
         self._data = {}
         self._running = False
 
     async def connect(self):
-        self._running = True
-        counter = 0
-        async with websockets.connect("ws://" + self._ip + ":" + self._port) as websocket:
-            while self._running:
-                await self.process_read_request(websocket)
-                await self.process_write_request(websocket)
-                counter = counter + 1
-                print(counter)
-                if counter > 200:
-                    self._running = False
+        try:
+            self._socket = await websockets.connect("ws://" + self._ip + ":" + self._port)
+            return True
+        except: # TODO specific exceptions
+            return False
 
     def read_cyclically(self, variable):
         if variable not in self._read_list:
@@ -87,10 +83,21 @@ class BrClient():
     def process_write_response(self, response):
         return
 
-client = BrClient(ip="localhost", port=8000)
-client.read_cyclically("LuxProg:counter")
-# client.read_cyclically("LuxProg:structuredCounter")
-# client.write("LuxProg:bonjour", "17")
-#client.write("LuxProg:reset", "1")
-#client.write("LuxProg:structuredCounter.counter1", "36")
-asyncio.run(client.connect())
+async def main():
+
+    client = BrClient(ip="localhost", port=8000)
+    client.read_cyclically("LuxProg:counter")
+    running = True
+    if await client.connect():
+        while running:
+            await client.process_read_request(client._socket)
+            await client.process_write_request(client._socket)
+            await asyncio.sleep(.1)
+            print('writing')
+            client.read_cyclically("LuxProg:counter")
+
+    # client.read_cyclically("LuxProg:structuredCounter")
+    # client.write("LuxProg:bonjour", "17")
+    #client.write("LuxProg:reset", "1")
+    #client.write("LuxProg:structuredCounter.counter1", "36")
+asyncio.run(main())
