@@ -74,18 +74,21 @@ class WebsocketsDriver():
         Reads all variables from the cyclic read list.
 
         Returns:
-            dict: A dictionary containing the parsed data.
+            dict: A dictionary containing the parsed data from the PLC
 
         """
         if self._read_names:
+            # Send request for data
             payload_obj = {
                 "type": "read",
                 "data": self._read_names
             }
             payload_json = json.dumps(payload_obj)
             await self._connection.send(payload_json)
+            # Wait for response
             response_json = await self._connection.recv()
             response_obj = json.loads(response_json)
+            # TODO what if its a write response? Does this function process both?
             if response_obj["type"] == "readresponse":
                 for name in response_obj["data"]:
                     parsed_data = self._parse_name(parsed_data, name, response_obj[name])
@@ -109,6 +112,7 @@ class WebsocketsDriver():
 
         """
         # TODO update to work with "Task:var" convention (not "Task.var")
+        # TODO rewrite this so it's easier to understand, or add comments
         name_parts = name.split(".")
         if len(name_parts) > 1:
             if name_parts[0] not in name_dict:
