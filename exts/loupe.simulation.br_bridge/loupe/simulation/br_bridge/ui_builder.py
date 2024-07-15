@@ -59,7 +59,7 @@ class UIBuilder:
         self.write_req = self._event_stream.create_subscription_to_push_by_type(EVENT_TYPE_DATA_WRITE_REQ, self.on_write_req_event)
         self._event_stream.push(event_type=EVENT_TYPE_DATA_INIT, payload={'data': {}})
 
-        self._thread = threading.Thread(target=lambda: asyncio.run(self._update_plc_data))
+        self._thread = threading.Thread(target=lambda: asyncio.run(self._update_plc_data()))
         self._thread.start()
 
     ###################################################################################
