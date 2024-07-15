@@ -151,7 +151,7 @@ class WebsocketsDriver():
         Connects to the target device.
 
         """
-        await self._connection.connect("ws://" + self.ip + ":" + self.port)
+        self._connection = await websockets.connect("ws://" + self.ip + ":" + str(self.port))
 
     async def disconnect(self):
         """
