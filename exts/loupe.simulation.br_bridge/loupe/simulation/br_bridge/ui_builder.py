@@ -21,6 +21,7 @@ from .br_bridge import EVENT_TYPE_DATA_READ, EVENT_TYPE_DATA_READ_REQ, EVENT_TYP
 import threading
 from threading import RLock
 
+import asyncio
 import json
 
 import time
@@ -58,7 +59,7 @@ class UIBuilder:
         self.write_req = self._event_stream.create_subscription_to_push_by_type(EVENT_TYPE_DATA_WRITE_REQ, self.on_write_req_event)
         self._event_stream.push(event_type=EVENT_TYPE_DATA_INIT, payload={'data': {}})
 
-        self._thread = threading.Thread(target=self._update_plc_data)
+        self._thread = threading.Thread(target=lambda: asyncio.run(self._update_plc_data))
         self._thread.start()
 
     ###################################################################################
@@ -73,7 +74,7 @@ class UIBuilder:
 
         if(not self._thread_is_alive):
             self._thread_is_alive = True
-            self._thread = threading.Thread(target=self._update_plc_data)
+            # TODO confirm this redefinition is not needed: self._thread = threading.Thread(target=self._update_plc_data)
             self._thread.start()
 
     def on_timeline_event(self, event):
@@ -177,7 +178,7 @@ class UIBuilder:
         with self.write_lock:
             self.write_queue[name] = value
 
-    def _update_plc_data(self):
+    async def _update_plc_data(self):
 
         thread_start_time = time.time()
         status_update_time = time.time()
@@ -204,7 +205,7 @@ class UIBuilder:
             try:
                 # Start the communication if it is not initialized
                 if (not self._communication_initialized) and (self._enable_communication):
-                    self._websockets_connector.connect()
+                    await self._websockets_connector.connect()
                     self._communication_initialized = True
                 elif (self._communication_initialized) and (not self._websockets_connector.is_connected()):
                     self._websockets_connector.disconnect()
