@@ -94,8 +94,11 @@ class WebsocketsDriver():
             # TODO what if its a write response? Does this function process both?
             response_type = response["type"]
             if response_type == "readresponse":
-                for name in response["data"]:
-                    parsed_data = self._parse_name(parsed_data, name, response[name])
+                print(response["data"])
+                parsed_data = {}
+                # TODO bypassing parsing for now
+                # for name in response["data"]:
+                #     parsed_data = self._parse_name(parsed_data, name, response[name])
             elif response_type == "writeresponse":
                 print('wrote data')
                 parsed_data = {}
