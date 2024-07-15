@@ -16,7 +16,7 @@ from carb.settings import get_settings
 from .websockets_driver import WebsocketsDriver
 
 from .global_variables import EXTENSION_NAME
-from .BRBridge import EVENT_TYPE_DATA_READ, EVENT_TYPE_DATA_READ_REQ, EVENT_TYPE_DATA_WRITE_REQ, EVENT_TYPE_DATA_INIT
+from .br_bridge import EVENT_TYPE_DATA_READ, EVENT_TYPE_DATA_READ_REQ, EVENT_TYPE_DATA_WRITE_REQ, EVENT_TYPE_DATA_INIT
 
 import threading
 from threading import RLock

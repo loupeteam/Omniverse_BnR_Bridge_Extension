@@ -24,13 +24,13 @@ class WebsocketsDriver():
 
     """
 
-    def __init__(self):             
+    def __init__(self, ip=None, port=None):             
         """
         Initializes an instance of the WebsocketsDriver class.
 
         """
-        self.ip = None
-        self.port = None
+        self.ip = ip
+        self.port = port
         self._connection = None
 
         self._read_names = list()
