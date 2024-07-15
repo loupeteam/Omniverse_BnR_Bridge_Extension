@@ -224,14 +224,14 @@ class UIBuilder:
                             # TODO would it be better if this was a deepcopy?
                             values = self.write_queue
                             self.write_queue = dict()
-                        self._websockets_connector.write_data(values)
+                        await self._websockets_connector.write_data(values)
                 except Exception as e:
                     if self._ui_initialized:
                         self._status_field.model.set_value(f"Error writing data to PLC: {e}")
                         status_update_time = time.time() + 1
 
                 # Read data from the PLC
-                self._data = self._websockets_connector.read_data()
+                self._data = await self._websockets_connector.read_data()
 
                 # Push the data to the event stream
                 self._event_stream.push(event_type=EVENT_TYPE_DATA_READ, payload={'data': self._data})
