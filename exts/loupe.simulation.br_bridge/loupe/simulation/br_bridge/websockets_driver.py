@@ -87,13 +87,17 @@ class WebsocketsDriver():
             await self._connection.send(payload_json)
             # Wait for response
             response_json = await self._connection.recv()
-            response_obj = json.loads(response_json)
+            response = json.loads(response_json)
             # TODO what if its a write response? Does this function process both?
-            if response_obj["type"] == "readresponse":
-                for name in response_obj["data"]:
-                    parsed_data = self._parse_name(parsed_data, name, response_obj[name])
+            response_type = response["type"]
+            if response_type == "readresponse":
+                for name in response["data"]:
+                    parsed_data = self._parse_name(parsed_data, name, response[name])
+            elif response_type == "writeresponse":
+                print('wrote data')
+                parsed_data = {}
         else:
-            parsed_data = dict()        
+            parsed_data = {}
         return parsed_data
         
     def _parse_name(self, name_dict, name, value):
@@ -151,7 +155,6 @@ class WebsocketsDriver():
         Disconnects from the target device.
 
         """
-
         await self._connection.close()
 
     def is_connected(self):
