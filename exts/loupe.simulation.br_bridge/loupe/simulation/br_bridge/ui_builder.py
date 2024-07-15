@@ -154,6 +154,11 @@ class UIBuilder:
                 with ui.HStack(spacing=5, height=100):
                     ui.Label("Variables")
                     self._monitor_field = ui.StringField(ui.SimpleStringModel("{}"), multiline=True, read_only=True)
+                self._test_read_field = ui.StringField(ui.SimpleStringModel("LuxProg:counter"), multiline=True, read_only=False) # TODO remove test var
+                self._test_read_button = ui.Button(text="Add Var To Cyclic Reads", 
+                                                   clicked_fn=lambda: self._websockets_connector.add_read(name=self._test_read_field.model.as_string))
+                self._clear_read_list_button = ui.Button(text="Clear Read List", 
+                                                         clicked_fn=self._websockets_connector.clear_read_list) # TODO cleanup
 
         self._ui_initialized = True
 
