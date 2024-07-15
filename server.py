@@ -1,4 +1,10 @@
-# server.py
+# This is a simple Websockets server
+# It acts as a mock of a AR instance with OMJSON, responding
+# to varaible requests and writing back data with some naievity
+
+# It's intended to be used for initial testing, adding some convenience
+# by not having to spin up a whole other simulated PLC
+
 import asyncio
 import websockets
 import json
