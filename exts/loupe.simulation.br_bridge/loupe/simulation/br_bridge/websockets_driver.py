@@ -52,6 +52,9 @@ class WebsocketsDriver():
             if name not in self._read_struct_def:
                 self._read_struct_def[name] = structure_def
 
+    def clear_read_list(self):
+        self._read_names = []
+
     async def write_data(self, data : dict ):
         """
         Writes data to the target device.
