@@ -168,6 +168,6 @@ class WebsocketsDriver():
             bool: True if the connection is open, False otherwise.
 
         """
-        return self.connection.open
+        return self._connection.open
 
 
