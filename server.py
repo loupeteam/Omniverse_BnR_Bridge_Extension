@@ -31,11 +31,11 @@ async def echo(websocket, path):
                         fake_plc_data[plc_var] = INITIAL_VALUE_NEW_READ_VAR
 
                     response["data"][plc_var] = fake_plc_data[plc_var]
+                    fake_plc_data[plc_var] += 1
                 
                 await websocket.send(json.dumps(response))
 
-                fake_plc_data["LuxProg:counter"] += 1
-
+                
             elif message_dict['type'] == "write":
                 print('no')
 
