@@ -10,6 +10,7 @@
 import asyncio
 import websockets
 import json
+import re
 
 class WebsocketsDriver():
     """
@@ -94,11 +95,11 @@ class WebsocketsDriver():
             # TODO what if its a write response? Does this function process both?
             response_type = response["type"]
             if response_type == "readresponse":
-                print(response["data"])
+                #print(response["data"])
                 parsed_data = {}
                 # TODO bypassing parsing for now
-                # for name in response["data"]:
-                #     parsed_data = self._parse_name(parsed_data, name, response[name])
+                for name in response["data"]:
+                    parsed_data = self._parse_name(parsed_data, name, response[name])
             elif response_type == "writeresponse":
                 print('wrote data')
                 parsed_data = {}
@@ -121,32 +122,35 @@ class WebsocketsDriver():
             dict: The updated name_dict.
 
         """
-        # TODO update to work with "Task:var" convention (not "Task.var")
         # TODO rewrite this so it's easier to understand, or add comments
-        name_parts = name.split(".")
-        if len(name_parts) > 1:
-            if name_parts[0] not in name_dict:
-                name_dict[name_parts[0]] = dict()
-            if "[" in name_parts[1]:
-                array_name, index = name_parts[1].split("[")
-                index = int(index[:-1])
-                if array_name not in name_dict[name_parts[0]]:
-                    name_dict[name_parts[0]][array_name] = []
-                if index >= len(name_dict[name_parts[0]][array_name]):
-                    name_dict[name_parts[0]][array_name].extend([None] * (index - len(name_dict[name_parts[0]][array_name]) + 1))
-                name_dict[name_parts[0]][array_name][index] = self._parse_name(name_dict[name_parts[0]][array_name], "[" + str(index) + "]" + ".".join(name_parts[2:]), value)
+        # Split "Task:var" PLC variable string format into a list
+        try:
+            name_parts = re.split('[:.]', name) # delimits by either : or .
+            if len(name_parts) > 1:
+                if name_parts[0] not in name_dict:
+                    name_dict[name_parts[0]] = dict()
+                if "[" in name_parts[1]:
+                    array_name, index = name_parts[1].split("[")
+                    index = int(index[:-1])
+                    if array_name not in name_dict[name_parts[0]]:
+                        name_dict[name_parts[0]][array_name] = []
+                    if index >= len(name_dict[name_parts[0]][array_name]):
+                        name_dict[name_parts[0]][array_name].extend([None] * (index - len(name_dict[name_parts[0]][array_name]) + 1))
+                    name_dict[name_parts[0]][array_name][index] = self._parse_name(name_dict[name_parts[0]][array_name], "[" + str(index) + "]" + ".".join(name_parts[2:]), value)
+                else:
+                    name_dict[name_parts[0]] = self._parse_name(name_dict[name_parts[0]], ".".join(name_parts[1:]), value)
             else:
-                name_dict[name_parts[0]] = self._parse_name(name_dict[name_parts[0]], ".".join(name_parts[1:]), value)
-        else:
-            if "[" in name_parts[0]:
-                array_name, index = name_parts[0].split("[")
-                index = int(index[:-1])
-                if index >= len(name_dict):
-                    name_dict.extend([None] * (index - len(name_dict) + 1))
-                name_dict[index] = value
-                return name_dict[index]
-            else:
-                name_dict[name_parts[0]] = value
+                if "[" in name_parts[0]:
+                    array_name, index = name_parts[0].split("[")
+                    index = int(index[:-1])
+                    if index >= len(name_dict):
+                        name_dict.extend([None] * (index - len(name_dict) + 1))
+                    name_dict[index] = value
+                    return name_dict[index]
+                else:
+                    name_dict[name_parts[0]] = value
+        except:
+            print('generic exception')
         return name_dict
     
     async def connect(self):
