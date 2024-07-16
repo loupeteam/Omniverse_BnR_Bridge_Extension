@@ -216,7 +216,7 @@ class UIBuilder:
                     await self._websockets_connector.connect()
                     self._communication_initialized = True
                 elif (self._communication_initialized) and (not self._websockets_connector.is_connected()):
-                    self._websockets_connector.disconnect()
+                    await self._websockets_connector.disconnect()
 
                 if status_update_time < time.time():
                     if self._websockets_connector.is_connected():
