@@ -121,17 +121,19 @@ class WebsocketsDriver():
             dict: The updated name_dict.
 
         """
-        # TODO rewrite this so it's easier to understand, or add comments
-        # Split "Task:var" PLC variable string format into a list
         try:
-            name_parts = re.split('[:.]', name) # delimits by either : or .
-            
+            # split PLC var name by : or , characters
+            name_parts = re.split('[:.]', name)
+            # If there's more than one level of hierarchy (var1.var2.var3 vs (var1)
             if len(name_parts) > 1:
+                # if var1 isn't already in the dictionary. create a dictionary for it
                 if name_parts[0] not in name_dict:
                     name_dict[name_parts[0]] = dict()
-                # is an array?
+                # is the next level an array (var2)
                 if "[" in name_parts[1]:
+                    # name_parts[1] is var2[0] (with there maybe being something after it)
                     array_name, index = name_parts[1].split("[")
+                    # strip off the ], convert index to an int from a str
                     index = int(index[:-1])
                     if array_name not in name_dict[name_parts[0]]:
                         name_dict[name_parts[0]][array_name] = []
@@ -141,18 +143,25 @@ class WebsocketsDriver():
                 else:
                     name_dict[name_parts[0]] = self._parse_name(name_dict[name_parts[0]], ".".join(name_parts[1:]), value)
             else:
+                
                 if "[" in name_parts[0]:
-                    array_name, index = name_parts[0].split("[")
-                    index = int(index[:-1])
-                    if index >= len(name_dict):
-                        name_dict.extend([None] * (index - len(name_dict) + 1))
-                    name_dict[index] = value
-                    return name_dict[index]
+                    # last element is an array - so we started with Task:myArray[0] => myArray[0]
+                    # or we're at the end of recursion, myArray[0]
+                    array_name, index = name_parts[0].split("[")  # array_name is myArray, index is "0]"
+                    index = int(index[:-1]) # remove "]"
+                    if array_name not in name_dict or not isinstance(name_dict[array_name], list):
+                        name_dict[array_name] = []
+                    
+                    if index >= len(name_dict[array_name]):
+                        name_dict[array_name].extend([None] * (index - len(name_dict[array_name]) + 1))
+                    name_dict[array_name][index] = value
                 else:
+                    # myNotArrayAlsoNotAStruct
                     name_dict[name_parts[0]] = value
         except Exception as e:
             print('generic exception' + str(e))
         return name_dict
+
     
     async def connect(self):
         """
