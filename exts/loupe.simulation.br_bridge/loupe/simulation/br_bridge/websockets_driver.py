@@ -7,7 +7,6 @@
   
 '''
 
-import asyncio
 import websockets
 import json
 import re
@@ -126,9 +125,11 @@ class WebsocketsDriver():
         # Split "Task:var" PLC variable string format into a list
         try:
             name_parts = re.split('[:.]', name) # delimits by either : or .
+            
             if len(name_parts) > 1:
                 if name_parts[0] not in name_dict:
                     name_dict[name_parts[0]] = dict()
+                # is an array?
                 if "[" in name_parts[1]:
                     array_name, index = name_parts[1].split("[")
                     index = int(index[:-1])
@@ -149,8 +150,8 @@ class WebsocketsDriver():
                     return name_dict[index]
                 else:
                     name_dict[name_parts[0]] = value
-        except:
-            print('generic exception')
+        except Exception as e:
+            print('generic exception' + str(e))
         return name_dict
     
     async def connect(self):
