@@ -1,12 +1,9 @@
-
-# run like a normal python script and observe results
-
 import unittest
 from parse_name import _parse_name
 
-class TestParseName(unittest.TestCase):
+class TestParseName_1_SingleVar(unittest.TestCase):
 
-    def test_variable_name_parsing_global(self):
+    def test_start_empty(self):
         starting_dict = {}
         value = 30
         input = "gBool"
@@ -14,23 +11,7 @@ class TestParseName(unittest.TestCase):
         actual_output = _parse_name(name_dict=starting_dict, name=input, value=value)
         self.assertEqual(actual_output, correct_output)
 
-    def test_variable_name_parsing_global_overwrite(self):
-        starting_dict = {"gBool" : 1}
-        value = 30
-        input = "gBool"
-        correct_output = {"gBool": value}
-        actual_output = _parse_name(name_dict=starting_dict, name=input, value=value)
-        self.assertEqual(actual_output, correct_output)
-
-    def test_variable_name_parsing_global_overwriteList(self):
-        starting_dict = {"gBool" : ['a', 'b', 'c']}
-        value = 30
-        input = "gBool"
-        correct_output = {"gBool": value}
-        actual_output = _parse_name(name_dict=starting_dict, name=input, value=value)
-        self.assertEqual(actual_output, correct_output)
-
-    def test_variable_name_paring_global_addition(self):
+    def test_start_nonempty(self):
         starting_dict = {"gInt" : 7}
         value = 30
         input = "gBool"
@@ -38,51 +19,99 @@ class TestParseName(unittest.TestCase):
         actual_output = _parse_name(name_dict=starting_dict, name=input, value=value)
         self.assertEqual(actual_output, correct_output)
 
-    
-    def test_variable_name_parsing_globalArr(self):
+    def test_override(self):
+        starting_dict = {"gBool" : 1}
+        value = 30
+        input = "gBool"
+        correct_output = {"gBool": value}
+        actual_output = _parse_name(name_dict=starting_dict, name=input, value=value)
+        self.assertEqual(actual_output, correct_output)
 
+    def test_overwriteList(self):
+        starting_dict = {"gBool" : ['a', 'b', 'c']}
+        value = 30
+        input = "gBool"
+        correct_output = {"gBool": value}
+        actual_output = _parse_name(name_dict=starting_dict, name=input, value=value)
+        self.assertEqual(actual_output, correct_output)
+
+    def test_overwriteDict(self):
+        starting_dict = {"gBool" : {'a': 1}}
+        value = 30
+        input = "gBool"
+        correct_output = {"gBool": value}
+        actual_output = _parse_name(name_dict=starting_dict, name=input, value=value)
+        self.assertEqual(actual_output, correct_output)
+
+
+class TestParseName_2_SingleArr(unittest.TestCase):
+    
+    def test_start_empty(self):
+        starting_dict = {}
         value = 30
         input = "gBool[2]"
         correct_output = {"gBool": [None, None, value]}
-        actual_output = _parse_name(name_dict={}, name=input, value=value)
+        actual_output = _parse_name(name_dict=starting_dict, name=input, value=value)
         self.assertEqual(actual_output, correct_output)
 
-    
-    def test_variable_name_parsing_globalArr_addition0(self):
-        starting_dict = {"gInt" : 7, "gBool" : []}
+    def test_start_nonempty(self):
+        starting_dict = {"gInt" : 7}
         value = 30
         input = "gBool[2]"
         correct_output = {"gInt" : 7, "gBool": [None, None, value]}
         actual_output = _parse_name(name_dict=starting_dict, name=input, value=value)
         self.assertEqual(actual_output, correct_output)
-
     
-    def test_variable_name_parsing_globalArr_addition1(self):
-        starting_dict = {"gInt" : 7, "gBool" : [1]}
+    def test_exists_empty_list(self):
+        starting_dict = {"gBool" : []}
         value = 30
         input = "gBool[2]"
-        correct_output = {"gInt" : 7, "gBool": [1, None, value]}
+        correct_output = {"gBool": [None, None, value]}
+        actual_output = _parse_name(name_dict=starting_dict, name=input, value=value)
+        self.assertEqual(actual_output, correct_output)
+    
+    def test_exists_short_list(self):
+        starting_dict = {"gBool" : [1]}
+        value = 30
+        input = "gBool[2]"
+        correct_output = {"gBool": [1, None, value]}
         actual_output = _parse_name(name_dict=starting_dict, name=input, value=value)
         self.assertEqual(actual_output, correct_output)
 
-    
-    def test_variable_name_parsing_globalArr_addition123(self):
-        starting_dict = {"gInt" : 7, "gBool" : [1, 2, 3]}
+    def test_exists_right_size_list(self):
+        starting_dict = {"gBool" : [1, 2, 3]}
         value = 30
         input = "gBool[2]"
-        correct_output = {"gInt" : 7, "gBool": [1, 2, value]}
+        correct_output = {"gBool": [1, 2, value]}
+        actual_output = _parse_name(name_dict=starting_dict, name=input, value=value)
+        self.assertEqual(actual_output, correct_output)
+    
+    def test_exists_long_list(self):
+        starting_dict = {"gBool" : [1, 2, 3, 4, 5]}
+        value = 30
+        input = "gBool[2]"
+        correct_output = {"gBool": [1, 2, value, 4, 5]}
+        actual_output = _parse_name(name_dict=starting_dict, name=input, value=value)
+        self.assertEqual(actual_output, correct_output)
+    
+    def test_exists_num(self):
+        starting_dict = {"gBool" : 40}
+        value = 30
+        input = "gBool[2]"
+        correct_output = {"gBool": [None, None, value]}
+        actual_output = _parse_name(name_dict=starting_dict, name=input, value=value)
+        self.assertEqual(actual_output, correct_output)
+    
+    def test_exists_dict(self):
+        starting_dict = {"gBool" : {'a' : 1}}
+        value = 30
+        input = "gBool[2]"
+        correct_output = {"gBool": [None, None, value]}
         actual_output = _parse_name(name_dict=starting_dict, name=input, value=value)
         self.assertEqual(actual_output, correct_output)
 
-    
-    def test_variable_name_parsing_globalArr_addition(self):
-        starting_dict = {"gInt" : 7, "gBool" : [1, 2]}
-        value = 30
-        input = "gBool[2]"
-        correct_output = {"gInt" : 7, "gBool": [1, 2, value]}
-        actual_output = _parse_name(name_dict=starting_dict, name=input, value=value)
-        self.assertEqual(actual_output, correct_output)
 
+class TestParseName_3_Multipart(unittest.TestCase):
 
     def test_variable_name_parsing_simple_struct(self) -> None:
 
