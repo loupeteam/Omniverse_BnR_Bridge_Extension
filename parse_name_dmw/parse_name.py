@@ -9,8 +9,8 @@ def _parse_name(name_dict, name, value):
         # Get existing sub dictionary representing name_parts[0]
         
         ## Ensure corresponding subdictionary exists
-        
-        if '[' in name_parts[0]:
+        first_part_is_array = '[' in name_parts[0]
+        if first_part_is_array:
             array_name, index = name_parts[0].split("[")
             index = int(index[:-1])
             
@@ -27,17 +27,21 @@ def _parse_name(name_dict, name, value):
                 
             existing_sub_dict = name_dict[array_name][index]        
         else:
+            member_name = name_parts[0]
             ## Ensure corresponding subdictionary exists
-            if name_parts[0] not in name_dict or not isinstance(name_dict[name_parts[0]], dict):
-                name_dict[name_parts[0]] = {}
+            if member_name not in name_dict or not isinstance(name_dict[member_name], dict):
+                name_dict[member_name] = {}
             
-            existing_sub_dict = name_dict[name_parts[0]]
+            existing_sub_dict = name_dict[member_name]
         
         
         sub_name = '.'.join(name_parts[1:])
         sub_dict = _parse_name(existing_sub_dict , sub_name, value)
         
-        name_dict[name_parts[0]] = sub_dict
+        if first_part_is_array:
+            name_dict[array_name][index] = sub_dict
+        else:
+            name_dict[member_name] = sub_dict
     else:
         if '[' in name_parts[0]:
             array_name, index = name_parts[0].split("[")
