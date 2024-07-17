@@ -127,27 +127,75 @@ class WebsocketsDriver():
         try:
             name_parts = re.split('[:.]', name) # delimits by either : or .
             if len(name_parts) > 1:
-                if name_parts[0] not in name_dict:
-                    name_dict[name_parts[0]] = dict()
-                if "[" in name_parts[1]:
-                    array_name, index = name_parts[1].split("[")
-                    index = int(index[:-1])
-                    if array_name not in name_dict[name_parts[0]]:
-                        name_dict[name_parts[0]][array_name] = []
-                    if index >= len(name_dict[name_parts[0]][array_name]):
-                        name_dict[name_parts[0]][array_name].extend([None] * (index - len(name_dict[name_parts[0]][array_name]) + 1))
-                    name_dict[name_parts[0]][array_name][index] = self._parse_name(name_dict[name_parts[0]][array_name], "[" + str(index) + "]" + ".".join(name_parts[2:]), value)
-                else:
-                    name_dict[name_parts[0]] = self._parse_name(name_dict[name_parts[0]], ".".join(name_parts[1:]), value)
-            else:
+                # more than one part. We will be recursing...
+
                 if "[" in name_parts[0]:
                     array_name, index = name_parts[0].split("[")
-                    index = int(index[:-1])
-                    if index >= len(name_dict):
-                        name_dict.extend([None] * (index - len(name_dict) + 1))
-                    name_dict[index] = value
-                    return name_dict[index]
+                    try:
+                        index = int(index[:-1])
+                    except:
+                        raise Exception("")
+                    
+
+
                 else:
+                    # not an array
+                    
+                    if name_parts[0] in name_dict:
+                        if not isinstance(name_dict[name_parts[0]], dict):
+                            raise Exception("Item exists but is not a structure")
+                    else:
+                        # Does not exist yet -> create it
+                        name_dict[name_parts[0]] = {}
+
+                    sub_parts = '.'.join(name_parts[1:])
+                    name_dict[name_parts[0]] = self._parse_name(name_dict[name_parts[0]], sub_parts, value)
+
+                # if name_parts[0] not in name_dict:
+                #     name_dict[name_parts[0]] = dict()
+                # if "[" in name_parts[1]:
+                #     array_name, index = name_parts[1].split("[")
+                #     index = int(index[:-1])
+                #     if array_name not in name_dict[name_parts[0]]:
+                #         name_dict[name_parts[0]][array_name] = []
+                #     if index >= len(name_dict[name_parts[0]][array_name]):
+                #         name_dict[name_parts[0]][array_name].extend([None] * (index - len(name_dict[name_parts[0]][array_name]) + 1))
+                #     name_dict[name_parts[0]][array_name][index] = self._parse_name(name_dict[name_parts[0]][array_name], "[" + str(index) + "]" + ".".join(name_parts[2:]), value)
+                # else:
+                #     name_dict[name_parts[0]] = self._parse_name(name_dict[name_parts[0]], ".".join(name_parts[1:]), value)
+            else:
+                # only one part. We will be assigning a value
+
+                if "[" in name_parts[0]:
+                    # Array  e.g. myArray[10]
+
+                    array_name, index = name_parts[0].split("[")
+                    try:
+                        index = int(index[:-1])
+                    except:
+                        raise Exception("")
+
+                    if array_name in name_dict :
+                        if not isinstance(name_dict[array_name], list):
+                            raise Exception("Item already exists, but is not array")
+                    else:
+                        # Does not exist -> Create array
+                        name_dict[array_name] = []
+
+                    # Extend if necessary
+                    if index >= len(name_dict[array_name]):
+                        name_dict.extend([None] * (index - len(name_dict[array_name]) + 1))
+                    
+                    # Assign value
+                    name_dict[index] = value
+
+                    # # Old way
+                    # if index >= len(name_dict):
+                    #     name_dict.extend([None] * (index - len(name_dict) + 1))
+                    # name_dict[index] = value
+                    # return name_dict[index]
+                else:
+                    # non-array
                     name_dict[name_parts[0]] = value
         except:
             print('generic exception')
