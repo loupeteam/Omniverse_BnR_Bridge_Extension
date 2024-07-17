@@ -339,4 +339,13 @@
     // Use flake8 for linting
     "python.linting.pylintEnabled": false,
     "python.linting.flake8Enabled": true,
+    "python.testing.unittestArgs": [
+        "-v",
+        "-s",
+        "./parse_name_dmw",
+        "-p",
+        "test*.py"
+    ],
+    "python.testing.pytestEnabled": false,
+    "python.testing.unittestEnabled": true,
 }
