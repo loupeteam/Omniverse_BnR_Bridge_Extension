@@ -1,6 +1,5 @@
 import re
 
-
 # Ensure that dictionary has a key of list_name, that it's value is a list,
 #   and that the list is long enough to include the index
 def _ensure_list_with_index_in_dict(list_name, _dict, _index):
@@ -12,6 +11,8 @@ def _ensure_list_with_index_in_dict(list_name, _dict, _index):
     if _index >= len(_dict[list_name]):
         _dict[list_name].extend([None] * (_index - len(_dict[list_name]) + 1))
 
+# Parse name and insert value into correct location in name_dict, creating a location
+#   in the name_dict if necessary. Returns modified name_dict.
 def _parse_name(name_dict, name, value):
 
     # Split name into parts
@@ -19,7 +20,7 @@ def _parse_name(name_dict, name, value):
     name_parts = re.split('[:.]', name)
 
     if len(name_parts) > 1:
-        # Multiple parts to passed-in name (e.g. Program:myStruct[3].myVar has 3 parts)
+        # Multiple parts in passed-in name (e.g. Program:myStruct[3].myVar has 3 parts)
         # From here we want to use recursion to assign a dictionary value (i.e. sub dictionary) to the first part.
 
         first_part_is_array = '[' in name_parts[0]
@@ -56,7 +57,8 @@ def _parse_name(name_dict, name, value):
         else:
             name_dict[member_name] = sub_dict
     else:
-        # only one part to passed in name
+        # Only one part in passed-in name
+        # Proceed to assign value
 
         if '[' in name_parts[0]:
             array_name, index = name_parts[0].split("[")
