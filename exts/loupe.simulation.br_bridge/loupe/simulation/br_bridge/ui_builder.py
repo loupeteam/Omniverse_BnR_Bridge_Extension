@@ -13,7 +13,7 @@ import omni.timeline
 
 from carb.settings import get_settings
 
-from .websockets_driver import WebsocketsDriver
+from .websockets_driver import WebsocketsDriver, PLCDataParsingException
 
 from .global_variables import EXTENSION_NAME
 from .br_bridge import EVENT_TYPE_DATA_READ, EVENT_TYPE_DATA_READ_REQ, EVENT_TYPE_DATA_WRITE_REQ, EVENT_TYPE_DATA_INIT
@@ -23,6 +23,7 @@ from threading import RLock
 
 import asyncio
 import json
+from websockets.exceptions import ConnectionClosed
 
 import time
  
@@ -223,6 +224,7 @@ class UIBuilder:
                     self._communication_initialized = True
                 elif (self._communication_initialized) and (not self._websockets_connector.is_connected()):
                     await self._websockets_connector.disconnect()
+                    self._communication_initialized = False
 
                 if status_update_time < time.time():
                     if self._websockets_connector.is_connected():
@@ -239,6 +241,13 @@ class UIBuilder:
                             values = self.write_queue
                             self.write_queue = dict()
                         await self._websockets_connector.write_data(values)
+
+                except ConnectionClosed as e:
+                    if self._ui_initialized:
+                        self._status_field.model.set_value(f"Connection Closed: {e}")
+                        # TODO disconnect?
+                        status_update_time = time.time() + 1
+
                 except Exception as e:
                     if self._ui_initialized:
                         self._status_field.model.set_value(f"Error writing data to PLC: {e}")
