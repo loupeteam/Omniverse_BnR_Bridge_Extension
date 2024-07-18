@@ -83,24 +83,28 @@ class WebsocketsDriver():
             dict: A dictionary containing the parsed data from the PLC
 
         """
-        if self._read_names:
-            # Send request for data
-            payload_obj = {
-                "type": "read",
-                "data": self._read_names
-            }
-            payload_json = json.dumps(payload_obj)
-            await self._connection.send(payload_json)
-            # Wait for response
-            response_json = await self._connection.recv()
-            response = json.loads(response_json)
+        parsed_data = {}
+        
+        if not self._read_names:
+            return parsed_data
 
-            if "data" not in response:
-                raise PLCDataParsingException("No data in response")
-            elif "type" not in response:
-                raise PLCDataParsingException("No type in response")
-            else:
-                parsed_data = self._parse_plc_response(response)
+        # Send request for data
+        payload_obj = {
+            "type": "read",
+            "data": self._read_names
+        }
+        payload_json = json.dumps(payload_obj)
+        await self._connection.send(payload_json)
+        # Wait for response
+        response_json = await self._connection.recv()
+        response = json.loads(response_json)
+
+        if "data" not in response:
+            raise PLCDataParsingException("No data in response")
+        elif "type" not in response:
+            raise PLCDataParsingException("No type in response")
+        else:
+            parsed_data = self._parse_plc_response(response)
             
         return parsed_data
     
