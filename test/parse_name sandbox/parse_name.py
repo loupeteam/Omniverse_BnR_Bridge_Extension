@@ -1,15 +1,16 @@
 import re
 
 
+# Ensure that dictionary has a key of list_name, that it's value is a list,
+#   and that the list is long enough to include the index
+def _ensure_list_with_index_in_dict(list_name, _dict, _index):
+    # Create list if not in dict
+    if list_name not in _dict or not isinstance(_dict[list_name], list):
+        _dict[list_name] = []
 
-def _ensure_list_in_dict(name, dict):
-    if name not in dict or not isinstance(dict[name], list):
-        dict[name] = []
-
-def _ensure_list_length_for_index(list, index):
-    if index >= len(list):
-        list.extend([None] * (index - len(list) + 1))
-
+    # Extend list if not long enough
+    if _index >= len(_dict[list_name]):
+        _dict[list_name].extend([None] * (_index - len(_dict[list_name]) + 1))
 
 def _parse_name(name_dict, name, value):
 
@@ -28,14 +29,8 @@ def _parse_name(name_dict, name, value):
             array_name, index = name_parts[0].split("[")
             index = int(index[:-1])
             
-            # if array_name not in name_dict or not isinstance(name_dict[array_name], list):
-            #     name_dict[array_name] = []
-            _ensure_list_in_dict(array_name, name_dict)
-
-            # Extend if necessary
-            # if index >= len(name_dict[array_name]):
-            #     name_dict[array_name].extend([None] * (index - len(name_dict[array_name]) + 1))
-            _ensure_list_length_for_index(name_dict[array_name], index)
+            # Ensure array is in dictionary and is long enough
+            _ensure_list_with_index_in_dict(array_name, name_dict, index)
 
             # Ensure array index location has dict-typed value
             if not isinstance(name_dict[array_name][index], dict):
@@ -55,6 +50,7 @@ def _parse_name(name_dict, name, value):
         sub_name = '.'.join(name_parts[1:])
         sub_dict = _parse_name(existing_sub_dict, sub_name, value)
         
+        # Assign result of recursive call (subdictionary) to first part
         if first_part_is_array:
             name_dict[array_name][index] = sub_dict
         else:
@@ -66,14 +62,8 @@ def _parse_name(name_dict, name, value):
             array_name, index = name_parts[0].split("[")
             index = int(index[:-1])
             
-            # if array_name not in name_dict or not isinstance(name_dict[array_name], list):
-            #     name_dict[array_name] = []
-            _ensure_list_in_dict(array_name, name_dict)
-            
-            # Extend if necessary
-            # if index >= len(name_dict[array_name]):
-            #     name_dict[array_name].extend([None] * (index - len(name_dict[array_name]) + 1))
-            _ensure_list_length_for_index(name_dict[array_name], index)
+            # Ensure array is in dictionary and is long enough
+            _ensure_list_with_index_in_dict(array_name, name_dict, index)
 
             name_dict[array_name][index] = value
         else:
