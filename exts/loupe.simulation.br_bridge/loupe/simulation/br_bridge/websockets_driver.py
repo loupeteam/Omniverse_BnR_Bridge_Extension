@@ -94,20 +94,30 @@ class WebsocketsDriver():
             # Wait for response
             response_json = await self._connection.recv()
             response = json.loads(response_json)
-            # TODO what if its a write response? Does this function process both?
-            response_type = response["type"]
-            if response_type == "readresponse":
-                #print(response["data"])
-                parsed_data = {}
-                # TODO bypassing parsing for now
-                for name in response["data"]:
-                    print(parsed_data, name, response["data"][name])
-                    parsed_data = self._parse_name(parsed_data, name, response["data"][name])
-            elif response_type == "writeresponse":
-                print('wrote data')
-        else:
-            parsed_data = {}
+
+            if "data" not in response:
+                raise PLCDataParsingException("No data in response")
+            elif "type" not in response:
+                raise PLCDataParsingException("No type in response")
+            else:
+                parsed_data = self._parse_plc_response(response)
+            
         return parsed_data
+    
+    # This function assumes response is a dictionary with a "type" and "data" key
+    def _parse_plc_response(self, response):
+        parsed_data = {}
+        if response["type"] == "readresponse":
+            try:
+                for name in response["data"]:
+                    print(parsed_data, name, response["data"])
+                    # parsed_data = self._parse_name(parsed_data, name, response["data"][name])
+            except Exception as e:
+                raise PLCDataParsingException(str(e))
+        elif response["type"] == "writeresponse":
+            print('succesfully wrote data')
+        return parsed_data
+
     
     def _parse_name(self, name_dict, name, value):
 
