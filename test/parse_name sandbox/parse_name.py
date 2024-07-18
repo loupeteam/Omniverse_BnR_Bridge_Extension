@@ -2,6 +2,8 @@ import re
 
 def _parse_name(name_dict, name, value):
 
+    # Split name into parts
+    # Example: "Program:myStruct[3].myVar" -> ["Program", "myStruct[3]", "myVar"]
     name_parts = re.split('[:.]', name)
 
     if len(name_parts) > 1:
@@ -10,7 +12,7 @@ def _parse_name(name_dict, name, value):
 
         first_part_is_array = '[' in name_parts[0]
 
-        ## Ensure corresponding subdictionary exists
+        ## Get pre-existing subdictionary (or create if necessary)
         if first_part_is_array:
             array_name, index = name_parts[0].split("[")
             index = int(index[:-1])
@@ -38,7 +40,7 @@ def _parse_name(name_dict, name, value):
         
         # Get subdictionary from using remaining part of path
         sub_name = '.'.join(name_parts[1:])
-        sub_dict = _parse_name(existing_sub_dict , sub_name, value)
+        sub_dict = _parse_name(existing_sub_dict, sub_name, value)
         
         if first_part_is_array:
             name_dict[array_name][index] = sub_dict
