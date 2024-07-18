@@ -113,7 +113,21 @@ class TestParseName_2_SingleArr(unittest.TestCase):
 
 class TestParseName_3_Multipart(unittest.TestCase):
 
-    def test_variable_name_parsing_simple_struct(self) -> None:
+    def test_top_struct(self) -> None:
+
+        value = 30
+        input = "myStruct.subStruct.var"
+        correct_output = {  
+            "myStruct": {
+                "subStruct": {
+                    "var": value
+                    }
+                }
+            }
+        actual_output = _parse_name(name_dict={}, name=input, value=value)
+        self.assertEqual(actual_output, correct_output)
+
+    def test_task_struct(self) -> None:
 
         value = 30
         input = "Program:struct.var"
@@ -126,7 +140,7 @@ class TestParseName_3_Multipart(unittest.TestCase):
         actual_output = _parse_name(name_dict={}, name=input, value=value)
         self.assertEqual(actual_output, correct_output)
 
-    def test_variable_name_parsing_simple_array(self) -> None:
+    def test_task_array_member(self) -> None:
 
         value = 30
         array_size = 30
@@ -138,9 +152,7 @@ class TestParseName_3_Multipart(unittest.TestCase):
         msg = "\n" + str(correct_output) + "\n" + str(actual_output)
         self.assertEqual(actual_output, correct_output, msg=msg)
 
-
-
-    def test_variable_name_parsing_array_member(self):
+    def test_array_index_member_first(self):
         value = 30
         actual_output = _parse_name({}, "myArray[0].myVar", value)
         expected =  {
@@ -152,7 +164,34 @@ class TestParseName_3_Multipart(unittest.TestCase):
                     
         self.assertEqual(actual_output, expected)
 
-    def test_variable_name_parsing_array_member_deeper(self):
+    def test_array_index_member_nth(self):
+        value = 30
+        actual_output = _parse_name({}, "myArray[2].myVar", value)
+        expected =  {
+                        "myArray": 
+                        [   None,
+                            None,
+                            {"myVar": value}
+                        ]
+                    }
+        self.assertEqual(actual_output, expected)
+
+    def test_array_index_member_nth_existing_replace(self):
+        starting_dict = {'myVar' : 1, "myArray": [1, 2, 3, 4]}
+        value = 30
+        actual_output = _parse_name(starting_dict, "myArray[2].myVar", value)
+        expected =  {
+                        "myVar" : 1,
+                        "myArray": 
+                        [   1,
+                            2,
+                            {"myVar": value},
+                            4
+                        ]
+                    }
+        self.assertEqual(actual_output, expected)
+
+    def test_structure_array_index_member(self):
         value = 30
         actual_output = _parse_name({}, "myStruct.myArray[0].myVar", value)
         expected =  {
@@ -166,6 +205,28 @@ class TestParseName_3_Multipart(unittest.TestCase):
                     }
         self.assertEqual(actual_output, expected)
 
+
+class TestParseName_4_Misc(unittest.TestCase):
+
+    def test_deep_mix_of_nesting(self):
+        value = 30
+        actual_output = _parse_name({}, "Task:myStruct.myArray[1].myStruct.arr[3].myVar", value)
+        expected =  {   "Task": {
+                            "myStruct": 
+                            {
+                                "myArray": 
+                                [
+                                    None,
+                                    {
+                                        "myStruct": {
+                                            "arr": [None, None, None, {"myVar" : value}]
+                                            }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+        self.assertEqual(actual_output, expected)
 
 
 
