@@ -342,7 +342,7 @@
     "python.testing.unittestArgs": [
         "-v",
         "-s",
-        "./parse_name_dmw",
+        ".test/parse_name sandbox",
         "-p",
         "test*.py"
     ],
