@@ -11,7 +11,6 @@ class TestParseName_1_SingleVar(omni.kit.test.AsyncTestCase):
 
     # Run before every test
     async def setUp(self):
-        self.name_dict = {}
         self.driver = WebsocketsDriver(ip='127.0.0.1', port=8000)
     
     # Run after every test
@@ -62,7 +61,6 @@ class TestParseName_2_SingleArr(omni.kit.test.AsyncTestCase):
 
     # Run before every test
     async def setUp(self):
-        self.name_dict = {}
         self.driver = WebsocketsDriver(ip='127.0.0.1', port=8000)
     
     # Run after every test
@@ -138,7 +136,6 @@ class TestParseName_3_Multipart(omni.kit.test.AsyncTestCase):
 
     # Run before every test
     async def setUp(self):
-        self.name_dict = {}
         self.driver = WebsocketsDriver(ip='127.0.0.1', port=8000)
     
     # Run after every test
@@ -242,7 +239,6 @@ class TestParseName_4_Misc(omni.kit.test.AsyncTestCase):
 
     # Run before every test
     async def setUp(self):
-        self.name_dict = {}
         self.driver = WebsocketsDriver(ip='127.0.0.1', port=8000)
     
     # Run after every test
@@ -276,7 +272,6 @@ class TestUtils(omni.kit.test.AsyncTestCase):
 
     # Run before every test
     async def setUp(self):
-        self.name_dict = {}
         self.driver = WebsocketsDriver(ip='127.0.0.1', port=8000)
     
     # Run after every test
