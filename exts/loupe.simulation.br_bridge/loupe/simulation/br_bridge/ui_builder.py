@@ -158,11 +158,15 @@ class UIBuilder:
 
         with ui.CollapsableFrame("Dev Tools", collapsed=True):
             with ui.VStack(spacing=5, height=0):
+                self._test_read_button = ui.Button(text="Add variables for test program", 
+                                                   clicked_fn=self._add_variables_for_test_program)
                 self._test_read_field = ui.StringField(ui.SimpleStringModel("LuxProg:counter"), multiline=True, read_only=False) # TODO remove test var
                 self._test_read_button = ui.Button(text="Add Var To Cyclic Reads", 
                                                    clicked_fn=lambda: self._websockets_connector.add_read(name=self._test_read_field.model.as_string))
                 self._clear_read_list_button = ui.Button(text="Clear Read List", 
                                                          clicked_fn=self._websockets_connector.clear_read_list) # TODO cleanup
+
+                self._separator = ui.Separator()
                 
                 self._test_write_field = ui.StringField(ui.SimpleStringModel("LuxProg:counter"), multiline=True, read_only=False) # TODO remove test var
                 self._test_write_field_value = ui.StringField(ui.SimpleStringModel("1000"), multiline=True, read_only=False) # TODO remove test var
@@ -171,6 +175,16 @@ class UIBuilder:
 
 
         self._ui_initialized = True
+
+    def _add_variables_for_test_program(self):
+        self._websockets_connector.add_read("LuxProg:counter")
+        self._websockets_connector.add_read("LuxProg:counter2")
+        self._websockets_connector.add_read("LuxProg:bool")
+        self._websockets_connector.add_read("LuxProg:int")
+        self._websockets_connector.add_read("LuxProg:dint")
+        self._websockets_connector.add_read("LuxProg:real")
+        self._websockets_connector.add_read("LuxProg:lreal")
+        self._websockets_connector.add_read("LuxProg:string")
 
     ####################################
     ####################################
