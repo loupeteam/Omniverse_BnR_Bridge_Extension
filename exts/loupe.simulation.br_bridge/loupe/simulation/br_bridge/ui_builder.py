@@ -63,6 +63,9 @@ class UIBuilder:
         self._thread = threading.Thread(target=lambda: asyncio.run(self._update_plc_data()))
         self._thread.start()
 
+        self._actual_cyclic_read_time = 0
+        self._last_cyclic_read_time = 0
+
     ###################################################################################
     #           The Functions Below Are Called Automatically By extension.py
     ###################################################################################
@@ -153,11 +156,12 @@ class UIBuilder:
         with ui.CollapsableFrame("Monitor", collapsed=False):
             with ui.VStack(spacing=5, height=0):
                 with ui.HStack(spacing=5, height=100):
-                    ui.Label("Variables")
+                    ui.Label("PLC Variables")
                     self._monitor_field = ui.StringField(ui.SimpleStringModel("{}"), multiline=True, read_only=True)
 
         with ui.CollapsableFrame("Dev Tools", collapsed=True):
             with ui.VStack(spacing=5, height=0):
+                self._actual_cyclic_read_time_field = ui.FloatField(ui.SimpleFloatModel(self._actual_cyclic_read_time), multiline=False, read_only=True)
                 self._test_read_button = ui.Button(text="Add variables for test program", 
                                                    clicked_fn=self._add_variables_for_test_program)
                 self._test_read_field = ui.StringField(ui.SimpleStringModel("LuxProg:counter"), multiline=True, read_only=False) # TODO remove test var
@@ -269,6 +273,9 @@ class UIBuilder:
 
                 # Read data from the PLC
                 self._data = await self._websockets_connector.read_data()
+                self._actual_cyclic_read_time = time.time() - self._last_cyclic_read_time
+                self._last_cyclic_read_time = time.time()
+                self._actual_cyclic_read_time_field.model.set_value(self._actual_cyclic_read_time)
 
                 # Push the data to the event stream
                 self._event_stream.push(event_type=EVENT_TYPE_DATA_READ, payload={'data': self._data})
