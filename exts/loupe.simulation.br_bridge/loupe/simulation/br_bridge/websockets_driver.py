@@ -70,7 +70,7 @@ class WebsocketsDriver():
             "data": data
         }
         payload_json = json.dumps(payload)
-        await self.connection.send(payload_json)
+        await self._connection.send(payload_json)
 
     async def read_data(self):
         """
