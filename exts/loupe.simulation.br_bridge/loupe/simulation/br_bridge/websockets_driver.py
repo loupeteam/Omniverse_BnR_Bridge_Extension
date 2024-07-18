@@ -98,70 +98,78 @@ class WebsocketsDriver():
                 parsed_data = {}
                 # TODO bypassing parsing for now
                 for name in response["data"]:
-                    parsed_data = self._parse_name(parsed_data, name, response[name])
+                    print(parsed_data, name, response["data"][name])
+                    parsed_data = self._parse_name(parsed_data, name, response["data"][name])
             elif response_type == "writeresponse":
                 print('wrote data')
-                parsed_data = {}
         else:
             parsed_data = {}
         return parsed_data
-        
+    
     def _parse_name(self, name_dict, name, value):
-        """
-        Convert a variable from a flat name to a dictionary based structure.
 
-        "my_struct.my_array[0].my_var: value" -> {"my_struct": {"my_array": [{"my_var": value}]}}
+        name_parts = re.split('[:.]', name)
 
-        Args:
-            name_dict (dict): The dictionary to store the parsed data.
-            name (str): The name of the data item.
-            value: The value of the data item.
+        if len(name_parts) > 1:
+            # Multiple parts to passed-in name (e.g. Program:myStruct[3].myVar has 3 parts)
+            # From here we want to use recursion to assign a dictionary value (i.e. sub dictionary) to the first part.
 
-        Returns:
-            dict: The updated name_dict.
+            first_part_is_array = '[' in name_parts[0]
 
-        """
-        try:
-            # split PLC var name by : or , characters
-            name_parts = re.split('[:.]', name)
-            # If there's more than one level of hierarchy (var1.var2.var3 vs (var1)
-            if len(name_parts) > 1:
-                # if var1 isn't already in the dictionary. create a dictionary for it
-                if name_parts[0] not in name_dict:
-                    name_dict[name_parts[0]] = dict()
-                # is the next level an array (var2)
-                if "[" in name_parts[1]:
-                    # name_parts[1] is var2[0] (with there maybe being something after it)
-                    array_name, index = name_parts[1].split("[")
-                    # strip off the ], convert index to an int from a str
-                    index = int(index[:-1])
-                    if array_name not in name_dict[name_parts[0]]:
-                        name_dict[name_parts[0]][array_name] = []
-                    if index >= len(name_dict[name_parts[0]][array_name]):
-                        name_dict[name_parts[0]][array_name].extend([None] * (index - len(name_dict[name_parts[0]][array_name]) + 1))
-                    name_dict[name_parts[0]][array_name][index] = self._parse_name(name_dict[name_parts[0]][array_name], "[" + str(index) + "]" + ".".join(name_parts[2:]), value)
-                else:
-                    name_dict[name_parts[0]] = self._parse_name(name_dict[name_parts[0]], ".".join(name_parts[1:]), value)
-            else:
+            ## Ensure corresponding subdictionary exists
+            if first_part_is_array:
+                array_name, index = name_parts[0].split("[")
+                index = int(index[:-1])
                 
-                if "[" in name_parts[0]:
-                    # last element is an array - so we started with Task:myArray[0] => myArray[0]
-                    # or we're at the end of recursion, myArray[0]
-                    array_name, index = name_parts[0].split("[")  # array_name is myArray, index is "0]"
-                    index = int(index[:-1]) # remove "]"
-                    if array_name not in name_dict or not isinstance(name_dict[array_name], list):
-                        name_dict[array_name] = []
-                    
-                    if index >= len(name_dict[array_name]):
-                        name_dict[array_name].extend([None] * (index - len(name_dict[array_name]) + 1))
-                    name_dict[array_name][index] = value
-                else:
-                    # myNotArrayAlsoNotAStruct
-                    name_dict[name_parts[0]] = value
-        except Exception as e:
-            print('generic exception' + str(e))
-        return name_dict
+                if array_name not in name_dict or not isinstance(name_dict[array_name], list):
+                    name_dict[array_name] = []
+                
+                # Extend if necessary
+                if index >= len(name_dict[array_name]):
+                    name_dict[array_name].extend([None] * (index - len(name_dict[array_name]) + 1))
 
+                # Ensure array index location has dict-typed value
+                if not isinstance(name_dict[array_name][index], dict):
+                    name_dict[array_name][index] = {}
+                    
+                existing_sub_dict = name_dict[array_name][index]        
+            else:
+                member_name = name_parts[0]
+                
+                ## Ensure corresponding subdictionary exists
+                if member_name not in name_dict or not isinstance(name_dict[member_name], dict):
+                    name_dict[member_name] = {}
+                
+                existing_sub_dict = name_dict[member_name]
+            
+            # Get subdictionary from using remaining part of path
+            sub_name = '.'.join(name_parts[1:])
+            sub_dict = self._parse_name(existing_sub_dict , sub_name, value)
+            
+            if first_part_is_array:
+                name_dict[array_name][index] = sub_dict
+            else:
+                name_dict[member_name] = sub_dict
+        else:
+            # only one part to passed in name
+
+            if '[' in name_parts[0]:
+                array_name, index = name_parts[0].split("[")
+                index = int(index[:-1])
+                
+                if array_name not in name_dict or not isinstance(name_dict[array_name], list):
+                    name_dict[array_name] = []
+                
+                # Extend if necessary
+                if index >= len(name_dict[array_name]):
+                    name_dict[array_name].extend([None] * (index - len(name_dict[array_name]) + 1))
+                
+                name_dict[array_name][index] = value
+            else:
+                # Write value (regardless of whether it exists or not)
+                name_dict[name_parts[0]] = value
+                
+        return name_dict
     
     async def connect(self):
         """
