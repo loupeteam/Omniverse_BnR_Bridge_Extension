@@ -33,9 +33,6 @@ dependencies = [
     "omni.usd",
     "omni.kit.menu.utils",
     "omni.physx"
-    # "omni.timeline",
-    # "omni.kit.commands",
-    # 
 ]
 timeout = 60
 
