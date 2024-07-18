@@ -84,7 +84,7 @@ class WebsocketsDriver():
 
         """
         parsed_data = {}
-        
+
         if not self._read_names:
             return parsed_data
 
@@ -95,6 +95,7 @@ class WebsocketsDriver():
         }
         payload_json = json.dumps(payload_obj)
         await self._connection.send(payload_json)
+        
         # Wait for response
         response_json = await self._connection.recv()
         response = json.loads(response_json)
@@ -108,8 +109,15 @@ class WebsocketsDriver():
             
         return parsed_data
     
-    # This function assumes response is a dictionary with a "type" and "data" key
+
     def _parse_plc_response(self, response):
+        """
+        Parses the dictionary of variables sent from the PLC.
+        This function assumes response is a dictionary with a "type" and "data" key
+        
+        Args:
+            response (dict): A dictionary containing the data to be parsed
+        """
         parsed_data = {}
         if response["type"] == "readresponse":
             try:
