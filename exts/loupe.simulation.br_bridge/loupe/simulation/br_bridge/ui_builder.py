@@ -166,13 +166,10 @@ class UIBuilder:
                 self._test_write_field = ui.StringField(ui.SimpleStringModel("LuxProg:counter"), multiline=True, read_only=False) # TODO remove test var
                 self._test_write_field_value = ui.StringField(ui.SimpleStringModel("1000"), multiline=True, read_only=False) # TODO remove test var
                 self._test_read_button = ui.Button(text="Write value",
-                                                   clicked_fn=lambda: self._write_to_plc(var=self._test_write_field.model.as_string, value=self._test_write_field_value.model.as_string))
+                                                   clicked_fn=lambda: self.queue_write(var=self._test_write_field.model.as_string, value=self._test_write_field_value.model.as_string))
 
 
         self._ui_initialized = True
-
-    def _write_to_plc(self, var, value):
-        asyncio.run(self._websockets_connector.write_data(data={var: value}))
 
     ####################################
     ####################################
