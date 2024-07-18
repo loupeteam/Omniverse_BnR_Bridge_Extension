@@ -1,5 +1,16 @@
 import re
 
+
+
+def _ensure_list_in_dict(name, dict):
+    if name not in dict or not isinstance(dict[name], list):
+        dict[name] = []
+
+def _ensure_list_length_for_index(list, index):
+    if index >= len(list):
+        list.extend([None] * (index - len(list) + 1))
+
+
 def _parse_name(name_dict, name, value):
 
     # Split name into parts
@@ -17,12 +28,14 @@ def _parse_name(name_dict, name, value):
             array_name, index = name_parts[0].split("[")
             index = int(index[:-1])
             
-            if array_name not in name_dict or not isinstance(name_dict[array_name], list):
-                name_dict[array_name] = []
-            
+            # if array_name not in name_dict or not isinstance(name_dict[array_name], list):
+            #     name_dict[array_name] = []
+            _ensure_list_in_dict(array_name, name_dict)
+
             # Extend if necessary
-            if index >= len(name_dict[array_name]):
-                name_dict[array_name].extend([None] * (index - len(name_dict[array_name]) + 1))
+            # if index >= len(name_dict[array_name]):
+            #     name_dict[array_name].extend([None] * (index - len(name_dict[array_name]) + 1))
+            _ensure_list_length_for_index(name_dict[array_name], index)
 
             # Ensure array index location has dict-typed value
             if not isinstance(name_dict[array_name][index], dict):
@@ -53,13 +66,15 @@ def _parse_name(name_dict, name, value):
             array_name, index = name_parts[0].split("[")
             index = int(index[:-1])
             
-            if array_name not in name_dict or not isinstance(name_dict[array_name], list):
-                name_dict[array_name] = []
+            # if array_name not in name_dict or not isinstance(name_dict[array_name], list):
+            #     name_dict[array_name] = []
+            _ensure_list_in_dict(array_name, name_dict)
             
             # Extend if necessary
-            if index >= len(name_dict[array_name]):
-                name_dict[array_name].extend([None] * (index - len(name_dict[array_name]) + 1))
-            
+            # if index >= len(name_dict[array_name]):
+            #     name_dict[array_name].extend([None] * (index - len(name_dict[array_name]) + 1))
+            _ensure_list_length_for_index(name_dict[array_name], index)
+
             name_dict[array_name][index] = value
         else:
             # Write value (regardless of whether it exists or not)
