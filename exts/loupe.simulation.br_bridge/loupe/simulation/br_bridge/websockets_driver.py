@@ -11,6 +11,9 @@ import websockets
 import json
 import re
 
+class PLCDataParsingException(Exception):
+    pass
+
 class WebsocketsDriver():
     """
     A class that represents an websockets driver. It contains a list of variables to read from the target device and provides methods to read and write data.
