@@ -222,8 +222,6 @@ class UIBuilder:
             sleepy_time = self._refresh_rate/1000 - (time.time() - thread_start_time)
             if sleepy_time > 0:
                 time.sleep(sleepy_time)
-            else:
-                time.sleep(0.1)
 
             thread_start_time = time.time()
 
