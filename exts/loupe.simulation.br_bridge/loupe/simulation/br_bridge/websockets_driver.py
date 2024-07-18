@@ -109,9 +109,9 @@ class WebsocketsDriver():
         parsed_data = {}
         if response["type"] == "readresponse":
             try:
-                for name in response["data"]:
-                    print(parsed_data, name, response["data"])
-                    # parsed_data = self._parse_name(parsed_data, name, response["data"][name])
+                for plc_var_dict in response["data"]:
+                    for key, value in plc_var_dict.items():
+                        parsed_data = self._parse_name(parsed_data, key, value)
             except Exception as e:
                 raise PLCDataParsingException(str(e))
         elif response["type"] == "writeresponse":
