@@ -11,6 +11,8 @@ import websockets
 import json
 import re
 
+import websockets.client
+
 class PLCDataParsingException(Exception):
     pass
 
@@ -201,7 +203,7 @@ class WebsocketsDriver():
         Connects to the target device.
 
         """
-        self._connection = await websockets.connect("ws://" + self.ip + ":" + str(self.port))
+        self._connection = await websockets.client.connect("ws://" + self.ip + ":" + str(self.port), ping_interval=None)
 
     async def disconnect(self):
         """
