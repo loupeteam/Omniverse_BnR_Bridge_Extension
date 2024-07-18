@@ -116,7 +116,6 @@ class WebsocketsDriver():
             
         return parsed_data
     
-
     def _parse_plc_response(self, response):
         """
         Parses the dictionary of variables sent from the PLC.
@@ -134,9 +133,8 @@ class WebsocketsDriver():
             except Exception as e:
                 raise PLCDataParsingException(str(e))
         elif response["type"] == "writeresponse":
-            print('succesfully wrote data')
+            pass
         return parsed_data
-
     
     def _parse_name(self, name_dict, name, value):
 

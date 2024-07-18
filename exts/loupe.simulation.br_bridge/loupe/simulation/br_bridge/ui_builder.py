@@ -177,7 +177,6 @@ class UIBuilder:
                 self._test_read_button = ui.Button(text="Write value",
                                                    clicked_fn=lambda: self.queue_write(name=self._test_write_field.model.as_string, value=self._test_write_field_value.model.as_string))
 
-
         self._ui_initialized = True
 
     def _add_variables_for_test_program(self):
