@@ -7,6 +7,7 @@
   
 '''
 
+import asyncio
 import websockets
 import json
 import re
@@ -96,10 +97,14 @@ class WebsocketsDriver():
             "data": self._read_names
         }
         payload_json = json.dumps(payload_obj)
-        await self._connection.send(payload_json)
-        
+
+        results = await asyncio.gather(
+            self._connection.send(payload_json),
+            self._connection.recv()
+        )
+        response_json = results[1] # get results second gather call
+
         # Wait for response
-        response_json = await self._connection.recv()
         response = json.loads(response_json)
 
         if "data" not in response:
