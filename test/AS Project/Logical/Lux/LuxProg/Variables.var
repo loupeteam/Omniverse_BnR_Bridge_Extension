@@ -6,6 +6,7 @@
 * This file is part of OMJSON, licensed under the MIT License.
 *)
 VAR
+	counter2 : DINT;
 	i : UINT;
 	jsonCache : ARRAY[0..MAI_CLIENTS] OF jsonCache_typ;
 END_VAR
