@@ -15,10 +15,6 @@ class TestParseName_SingleVar(omni.kit.test.AsyncTestCase):
         self.driver = WebsocketsDriver(ip='127.0.0.1', port=8000)
         self.test_output_string = "correct: {correct}\nactual: {actual}\n\n"
         self.test_different_data_types = ["30", 30, -18935, 30.151535, True, False]
-    
-    # Run after every test
-    async def tearDown(self):
-        pass
 
     def test_start_empty(self):
         """Empty dictionary is populated with single var."""
@@ -99,10 +95,6 @@ class TestParseName_SingleArray(omni.kit.test.AsyncTestCase):
         self.driver = WebsocketsDriver(ip='127.0.0.1', port=8000)
         self.test_output_string = "correct: {correct}\nactual: {actual}\n\n"
         self.test_different_data_types = ["30", 30, -18935, 30.151535, True, False]
-    
-    # Run after every test
-    async def tearDown(self):
-        pass
     
     def test_start_empty(self):
         """Add a list to an existing dictionary"""
