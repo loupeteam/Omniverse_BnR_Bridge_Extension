@@ -13,7 +13,7 @@ import omni.timeline
 
 from carb.settings import get_settings
 
-from .websockets_driver import WebsocketsDriver
+from .websockets_driver import WebsocketsDriver, PLCDataParsingException
 
 from .global_variables import EXTENSION_NAME
 from .br_bridge import EVENT_TYPE_DATA_READ, EVENT_TYPE_DATA_READ_REQ, EVENT_TYPE_DATA_WRITE_REQ, EVENT_TYPE_DATA_INIT
@@ -23,6 +23,7 @@ from threading import RLock
 
 import asyncio
 import json
+from websockets.exceptions import ConnectionClosed
 
 import time
  
@@ -61,6 +62,9 @@ class UIBuilder:
 
         self._thread = threading.Thread(target=lambda: asyncio.run(self._update_plc_data()))
         self._thread.start()
+
+        self._actual_cyclic_read_time = 0
+        self._last_cyclic_read_time = 0
 
     ###################################################################################
     #           The Functions Below Are Called Automatically By extension.py
@@ -152,18 +156,38 @@ class UIBuilder:
         with ui.CollapsableFrame("Monitor", collapsed=False):
             with ui.VStack(spacing=5, height=0):
                 with ui.HStack(spacing=5, height=100):
-                    ui.Label("Variables")
+                    ui.Label("PLC Variables")
                     self._monitor_field = ui.StringField(ui.SimpleStringModel("{}"), multiline=True, read_only=True)
 
         with ui.CollapsableFrame("Dev Tools", collapsed=True):
             with ui.VStack(spacing=5, height=0):
+                self._actual_cyclic_read_time_field = ui.FloatField(ui.SimpleFloatModel(self._actual_cyclic_read_time), multiline=False, read_only=True)
+                self._test_read_button = ui.Button(text="Add variables for test program", 
+                                                   clicked_fn=self._add_variables_for_test_program)
                 self._test_read_field = ui.StringField(ui.SimpleStringModel("LuxProg:counter"), multiline=True, read_only=False) # TODO remove test var
                 self._test_read_button = ui.Button(text="Add Var To Cyclic Reads", 
                                                    clicked_fn=lambda: self._websockets_connector.add_read(name=self._test_read_field.model.as_string))
                 self._clear_read_list_button = ui.Button(text="Clear Read List", 
                                                          clicked_fn=self._websockets_connector.clear_read_list) # TODO cleanup
 
+                self._separator = ui.Separator()
+                
+                self._test_write_field = ui.StringField(ui.SimpleStringModel("LuxProg:counter"), multiline=True, read_only=False) # TODO remove test var
+                self._test_write_field_value = ui.StringField(ui.SimpleStringModel("1000"), multiline=True, read_only=False) # TODO remove test var
+                self._test_read_button = ui.Button(text="Write value",
+                                                   clicked_fn=lambda: self.queue_write(name=self._test_write_field.model.as_string, value=self._test_write_field_value.model.as_string))
+
         self._ui_initialized = True
+
+    def _add_variables_for_test_program(self):
+        self._websockets_connector.add_read("LuxProg:counter")
+        self._websockets_connector.add_read("LuxProg:counter2")
+        self._websockets_connector.add_read("LuxProg:bool")
+        self._websockets_connector.add_read("LuxProg:int")
+        self._websockets_connector.add_read("LuxProg:dint")
+        self._websockets_connector.add_read("LuxProg:real")
+        self._websockets_connector.add_read("LuxProg:lreal")
+        self._websockets_connector.add_read("LuxProg:string")
 
     ####################################
     ####################################
@@ -197,8 +221,6 @@ class UIBuilder:
             sleepy_time = self._refresh_rate/1000 - (time.time() - thread_start_time)
             if sleepy_time > 0:
                 time.sleep(sleepy_time)
-            else:
-                time.sleep(0.1)
 
             thread_start_time = time.time()
 
@@ -217,6 +239,7 @@ class UIBuilder:
                     self._communication_initialized = True
                 elif (self._communication_initialized) and (not self._websockets_connector.is_connected()):
                     await self._websockets_connector.disconnect()
+                    self._communication_initialized = False
 
                 if status_update_time < time.time():
                     if self._websockets_connector.is_connected():
@@ -233,6 +256,13 @@ class UIBuilder:
                             values = self.write_queue
                             self.write_queue = dict()
                         await self._websockets_connector.write_data(values)
+
+                except ConnectionClosed as e:
+                    if self._ui_initialized:
+                        self._status_field.model.set_value(f"Connection Closed: {e}")
+                        # TODO disconnect?
+                        status_update_time = time.time() + 1
+
                 except Exception as e:
                     if self._ui_initialized:
                         self._status_field.model.set_value(f"Error writing data to PLC: {e}")
@@ -240,6 +270,9 @@ class UIBuilder:
 
                 # Read data from the PLC
                 self._data = await self._websockets_connector.read_data()
+                self._actual_cyclic_read_time = time.time() - self._last_cyclic_read_time
+                self._last_cyclic_read_time = time.time()
+                self._actual_cyclic_read_time_field.model.set_value(self._actual_cyclic_read_time)
 
                 # Push the data to the event stream
                 self._event_stream.push(event_type=EVENT_TYPE_DATA_READ, payload={'data': self._data})

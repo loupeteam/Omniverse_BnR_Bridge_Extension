@@ -9,37 +9,40 @@ import asyncio
 import websockets
 import json
 
-fake_plc_data = {"LuxProg:counter": 0}
+fake_plc_data = [{"LuxProg:counter": 0}]
 INITIAL_VALUE_NEW_READ_VAR = 0
 
-async def echo(websocket, path):
+async def mock_omjson_plc(websocket, path):
     async for message in websocket:
         response = {
                 "type": "readresponse",
-                "data": {}
+                "data": []
         }
         
         print(f"Received message from client: {message}")
         message_dict = json.loads(message)
 
-        if 'type' in message_dict.keys():
-            if message_dict['type'] == "read":
-                for plc_var in message_dict["data"]:
-                    # If variable doesn't already exist, add it to dictionary
-                    # Pretend it exists on the PLC
-                    if plc_var not in fake_plc_data.keys():
-                        fake_plc_data[plc_var] = INITIAL_VALUE_NEW_READ_VAR
+        if message_dict['type'] == "read":
+            for plc_var in message_dict["data"]:
+                for plc_var_dict in fake_plc_data: # for every dict in the list
+                    if plc_var in plc_var_dict.keys(): # if the requested var is in the keys
+                        response["data"].append(plc_var_dict)
+                        plc_var_dict[plc_var] = int(plc_var_dict[plc_var]) + 1
+                    
+            
+            await websocket.send(json.dumps(response))
 
-                    response["data"][plc_var] = fake_plc_data[plc_var]
-                    fake_plc_data[plc_var] += 1
-                
-                await websocket.send(json.dumps(response))
+            
+        elif message_dict['type'] == "write":
+            for plc_var in message_dict["data"]:
+                for plc_var_dict in fake_plc_data: # for every dict in the list
+                    if plc_var in plc_var_dict.keys(): # if the requested var is in the keys
+                        plc_var_dict[plc_var] = message_dict["data"][plc_var]
+                        print(fake_plc_data)
 
-                
-            elif message_dict['type'] == "write":
-                print('no')
+            # TODO create writeresponse
 
-start_server = websockets.serve(echo, "localhost", 8000)
+start_server = websockets.serve(mock_omjson_plc, "localhost", 8000)
 
 asyncio.get_event_loop().run_until_complete(start_server)
 asyncio.get_event_loop().run_forever()

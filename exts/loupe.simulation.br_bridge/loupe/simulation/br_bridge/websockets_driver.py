@@ -10,6 +10,12 @@
 import asyncio
 import websockets
 import json
+import re
+
+import websockets.client
+
+class PLCDataParsingException(Exception):
+    pass
 
 class WebsocketsDriver():
     """
@@ -70,7 +76,7 @@ class WebsocketsDriver():
             "data": data
         }
         payload_json = json.dumps(payload)
-        await self.connection.send(payload_json)
+        await self._connection.send(payload_json)
 
     async def read_data(self):
         """
@@ -80,73 +86,119 @@ class WebsocketsDriver():
             dict: A dictionary containing the parsed data from the PLC
 
         """
-        if self._read_names:
-            # Send request for data
-            payload_obj = {
-                "type": "read",
-                "data": self._read_names
-            }
-            payload_json = json.dumps(payload_obj)
-            await self._connection.send(payload_json)
-            # Wait for response
-            response_json = await self._connection.recv()
-            response = json.loads(response_json)
-            # TODO what if its a write response? Does this function process both?
-            response_type = response["type"]
-            if response_type == "readresponse":
-                print(response["data"])
-                parsed_data = {}
-                # TODO bypassing parsing for now
-                # for name in response["data"]:
-                #     parsed_data = self._parse_name(parsed_data, name, response[name])
-            elif response_type == "writeresponse":
-                print('wrote data')
-                parsed_data = {}
+        parsed_data = {}
+
+        if not self._read_names:
+            return parsed_data
+
+        # Send request for data
+        payload_obj = {
+            "type": "read",
+            "data": self._read_names
+        }
+        payload_json = json.dumps(payload_obj)
+
+        results = await asyncio.gather(
+            self._connection.send(payload_json),
+            self._connection.recv()
+        )
+        response_json = results[1] # get results second gather call
+
+        # Wait for response
+        response = json.loads(response_json)
+
+        if "data" not in response:
+            raise PLCDataParsingException("No data in response")
+        elif "type" not in response:
+            raise PLCDataParsingException("No type in response")
         else:
-            parsed_data = {}
+            parsed_data = self._parse_plc_response(response)
+            
         return parsed_data
+    
+    def _parse_plc_response(self, response):
+        """
+        Parses the dictionary of variables sent from the PLC.
+        This function assumes response is a dictionary with a "type" and "data" key
         
-    def _parse_name(self, name_dict, name, value):
-        """
-        Convert a variable from a flat name to a dictionary based structure.
-
-        "my_struct.my_array[0].my_var: value" -> {"my_struct": {"my_array": [{"my_var": value}]}}
-
         Args:
-            name_dict (dict): The dictionary to store the parsed data.
-            name (str): The name of the data item.
-            value: The value of the data item.
-
-        Returns:
-            dict: The updated name_dict.
-
+            response (dict): A dictionary containing the data to be parsed
         """
-        # TODO update to work with "Task:var" convention (not "Task.var")
-        # TODO rewrite this so it's easier to understand, or add comments
-        name_parts = name.split(".")
+        parsed_data = {}
+        if response["type"] == "readresponse":
+            try:
+                for plc_var_dict in response["data"]:
+                    for key, value in plc_var_dict.items():
+                        parsed_data = self._parse_name(parsed_data, key, value)
+            except Exception as e:
+                raise PLCDataParsingException(str(e))
+        elif response["type"] == "writeresponse":
+            pass
+        return parsed_data
+    
+    def _parse_name(self, name_dict, name, value):
+
+        name_parts = re.split('[:.]', name)
+
         if len(name_parts) > 1:
-            if name_parts[0] not in name_dict:
-                name_dict[name_parts[0]] = dict()
-            if "[" in name_parts[1]:
-                array_name, index = name_parts[1].split("[")
-                index = int(index[:-1])
-                if array_name not in name_dict[name_parts[0]]:
-                    name_dict[name_parts[0]][array_name] = []
-                if index >= len(name_dict[name_parts[0]][array_name]):
-                    name_dict[name_parts[0]][array_name].extend([None] * (index - len(name_dict[name_parts[0]][array_name]) + 1))
-                name_dict[name_parts[0]][array_name][index] = self._parse_name(name_dict[name_parts[0]][array_name], "[" + str(index) + "]" + ".".join(name_parts[2:]), value)
-            else:
-                name_dict[name_parts[0]] = self._parse_name(name_dict[name_parts[0]], ".".join(name_parts[1:]), value)
-        else:
-            if "[" in name_parts[0]:
+            # Multiple parts to passed-in name (e.g. Program:myStruct[3].myVar has 3 parts)
+            # From here we want to use recursion to assign a dictionary value (i.e. sub dictionary) to the first part.
+
+            first_part_is_array = '[' in name_parts[0]
+
+            ## Ensure corresponding subdictionary exists
+            if first_part_is_array:
                 array_name, index = name_parts[0].split("[")
                 index = int(index[:-1])
-                if index >= len(name_dict):
-                    name_dict.extend([None] * (index - len(name_dict) + 1))
-                name_dict[index] = value
-                return name_dict[index]
+                
+                if array_name not in name_dict or not isinstance(name_dict[array_name], list):
+                    name_dict[array_name] = []
+                
+                # Extend if necessary
+                if index >= len(name_dict[array_name]):
+                    name_dict[array_name].extend([None] * (index - len(name_dict[array_name]) + 1))
+
+                # Ensure array index location has dict-typed value
+                if not isinstance(name_dict[array_name][index], dict):
+                    name_dict[array_name][index] = {}
+                    
+                existing_sub_dict = name_dict[array_name][index]        
             else:
+                member_name = name_parts[0]
+                
+                ## Ensure corresponding subdictionary exists
+                if member_name not in name_dict or not isinstance(name_dict[member_name], dict):
+                    name_dict[member_name] = {}
+                
+                existing_sub_dict = name_dict[member_name]
+            
+            # Get subdictionary from using remaining part of path
+            sub_name = '.'.join(name_parts[1:])
+            sub_dict = self._parse_name(existing_sub_dict , sub_name, value)
+            
+            if first_part_is_array:
+                name_dict[array_name][index] = sub_dict
+            else:
+                name_dict[member_name] = sub_dict
+        else:
+            # only one part to passed in name
+
+            if '[' in name_parts[0]:
+                array_name, index = name_parts[0].split("[")
+                index = int(index[:-1])
+                
+                if array_name not in name_dict or not isinstance(name_dict[array_name], list):
+                    name_dict[array_name] = []
+                
+                # Extend if necessary
+                if index >= len(name_dict[array_name]):
+                    name_dict[array_name].extend([None] * (index - len(name_dict[array_name]) + 1))
+                
+                name_dict[array_name][index] = value
+            else:
+                # Write value (regardless of whether it exists or not)
                 name_dict[name_parts[0]] = value
+                
         return name_dict
     
     async def connect(self):
@@ -154,7 +206,7 @@ class WebsocketsDriver():
         Connects to the target device.
 
         """
-        self._connection = await websockets.connect("ws://" + self.ip + ":" + str(self.port))
+        self._connection = await websockets.client.connect("ws://" + self.ip + ":" + str(self.port), ping_interval=None)
 
     async def disconnect(self):
         """
