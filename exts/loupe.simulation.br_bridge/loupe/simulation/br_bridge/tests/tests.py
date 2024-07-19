@@ -287,8 +287,12 @@ class TestParseName_Multipart(omni.kit.test.AsyncTestCase):
         self.assertEqual(actual_output, 
                          correct_output, 
                          msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
+        self.assertEqual(len(actual_output["myArray"]),
+                         len(correct_output["myArray"]),
+                         msg="Array length should not have changed")
 
     def test_array_index_member_nth(self):
+        """Test writing to last member of an array."""
         value = 30
         actual_output = self.driver._parse_name({}, "myArray[2].myVar", value)
         correct_output =  {
@@ -301,25 +305,33 @@ class TestParseName_Multipart(omni.kit.test.AsyncTestCase):
         self.assertEqual(actual_output, 
                          correct_output, 
                          msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
+        self.assertEqual(len(actual_output["myArray"]),
+                         len(correct_output["myArray"]),
+                         msg="Array length should not have changed")
 
     def test_array_index_member_nth_existing_replace(self):
+        """Test replacing second to last of an array."""
         starting_dict = {'myVar' : 1, "myArray": [1, 2, 3, 4]}
         value = 30
         actual_output = self.driver._parse_name(starting_dict, "myArray[2].myVar", value)
         correct_output =  {
-                        "myVar" : 1,
-                        "myArray": 
-                        [   1,
-                            2,
-                            {"myVar": value},
-                            4
-                        ]
-                    }
+                            "myVar" : 1,
+                                "myArray": 
+                                [   1,
+                                    2,
+                                    {"myVar": value},
+                                    4
+                                ]
+                        }
         self.assertEqual(actual_output, 
                          correct_output, 
                          msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
+        self.assertEqual(len(actual_output["myArray"]),
+                         len(correct_output["myArray"]),
+                         msg="Array length should not have changed")
 
     def test_structure_array_index_member(self):
+        """Writing to a struct inside of an array, inside of a struct."""
         value = 30
         actual_output = self.driver._parse_name({}, "myStruct.myArray[0].myVar", value)
         correct_output =  {
