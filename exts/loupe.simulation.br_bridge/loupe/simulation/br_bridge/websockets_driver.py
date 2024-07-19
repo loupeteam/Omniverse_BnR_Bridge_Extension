@@ -202,7 +202,8 @@ class WebsocketsDriver():
         Connects to the target device.
 
         """
-        self._connection = await websockets.client.connect("ws://" + self.ip + ":" + str(self.port), ping_interval=None)
+        self._connection = await websockets.client.connect("ws://" + self.ip + ":" + str(self.port), 
+                                                           ping_interval=None) # OMJSON does not use ping/pong
 
     async def disconnect(self):
         """
