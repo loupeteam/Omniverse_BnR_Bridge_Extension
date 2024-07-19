@@ -7,6 +7,7 @@ fails = 0
 import omni.kit.test
 from loupe.simulation.br_bridge.websockets_driver import WebsocketsDriver
 
+# pylint: disable=W0212
 class TestParseName_SingleVar(omni.kit.test.AsyncTestCase):
 
     # Run before every test
