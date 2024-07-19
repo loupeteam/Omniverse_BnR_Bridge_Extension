@@ -27,16 +27,18 @@ from websockets.exceptions import ConnectionClosed
 
 import time
 
-DEFAULT_DEV_TEST_UI_VAR = "LuxProg:counter"
-DEFAULT_DEV_TEST_UI_VALUE = "1000"
-TEST_PROGRAM_VARS = ["LuxProg:counter", 
-                     "LuxProg:counter2", 
-                     "LuxProg:bool", 
-                     "LuxProg:int", 
-                     "LuxProg:dint", 
-                     "LuxProg:real", 
-                     "LuxProg:lreal", 
-                     "LuxProg:string"]
+DEFAULT_DEV_TEST_UI_VAR = "TestProg:counter"
+DEFAULT_DEV_TEST_UI_VALUE = "0"
+DEFAULT_DEV_TEST_UI_WRITE_VAR = "TestProg:counterToggle"
+DEFAULT_DEV_TEST_UI_WRITE_VALUE = "1"
+TEST_PROGRAM_VARS = ["TestProg:counter",
+                     "TestProg:counter2", 
+                     "TestProg:bool", 
+                     "TestProg:int", 
+                     "TestProg:dint", 
+                     "TestProg:real", 
+                     "TestProg:lreal", 
+                     "TestProg:string"]
  
 class UIBuilder:
     def __init__(self):
@@ -183,8 +185,8 @@ class UIBuilder:
 
                 self._separator = ui.Separator()
                 
-                self._test_write_field = ui.StringField(ui.SimpleStringModel(DEFAULT_DEV_TEST_UI_VAR), multiline=True, read_only=False)
-                self._test_write_field_value = ui.StringField(ui.SimpleStringModel(DEFAULT_DEV_TEST_UI_VALUE), multiline=True, read_only=False)
+                self._test_write_field = ui.StringField(ui.SimpleStringModel(DEFAULT_DEV_TEST_UI_WRITE_VAR), multiline=True, read_only=False)
+                self._test_write_field_value = ui.StringField(ui.SimpleStringModel(DEFAULT_DEV_TEST_UI_WRITE_VALUE), multiline=True, read_only=False)
                 self._test_read_button = ui.Button(text="Write value",
                                                    clicked_fn=lambda: self.queue_write(name=self._test_write_field.model.as_string, value=self._test_write_field_value.model.as_string))
 

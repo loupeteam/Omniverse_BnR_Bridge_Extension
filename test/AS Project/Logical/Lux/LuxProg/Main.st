@@ -40,8 +40,5 @@ PROGRAM _CYCLIC
 		END_FOR
 		oldClientInfo := jsonWebSocketServer_0.ClientInfo;
 	END_IF
-
-	counter := counter + 1;
-	counter2 := counter2 + 2;
 	
 END_PROGRAM
