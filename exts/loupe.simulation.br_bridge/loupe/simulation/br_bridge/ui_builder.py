@@ -180,14 +180,12 @@ class UIBuilder:
         self._ui_initialized = True
 
     def _add_variables_for_test_program(self):
-        self._websockets_connector.add_read("LuxProg:counter")
-        self._websockets_connector.add_read("LuxProg:counter2")
-        self._websockets_connector.add_read("LuxProg:bool")
-        self._websockets_connector.add_read("LuxProg:int")
-        self._websockets_connector.add_read("LuxProg:dint")
-        self._websockets_connector.add_read("LuxProg:real")
-        self._websockets_connector.add_read("LuxProg:lreal")
-        self._websockets_connector.add_read("LuxProg:string")
+        """
+        Add a stock set of variables, corresponding to test variables in the sample AS program, to the readlist.
+        """
+        test_vars = ["LuxProg:counter", "LuxProg:counter2", "LuxProg:bool", "LuxProg:int", "LuxProg:dint", "LuxProg:real", "LuxProg:lreal", "LuxProg:string"]
+        for var in test_vars:
+            self._websockets_connector.add_read(var)
 
     ####################################
     ####################################
