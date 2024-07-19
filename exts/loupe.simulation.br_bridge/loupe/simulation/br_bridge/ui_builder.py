@@ -223,6 +223,8 @@ class UIBuilder:
         thread_start_time = time.time()
         status_update_time = time.time()
 
+        STATUS_UPDATE_TIME_SECONDS = 1
+
         while self._thread_is_alive:
 
             # Sleep for the refresh rate
@@ -269,15 +271,21 @@ class UIBuilder:
                     if self._ui_initialized:
                         self._status_field.model.set_value(f"Connection Closed: {e}")
                         # TODO disconnect?
-                        status_update_time = time.time() + 1
+                        status_update_time = time.time() + STATUS_UPDATE_TIME_SECONDS
 
                 except Exception as e:
                     if self._ui_initialized:
                         self._status_field.model.set_value(f"Error writing data to PLC: {e}")
-                        status_update_time = time.time() + 1
+                        status_update_time = time.time() + STATUS_UPDATE_TIME_SECONDS
 
                 # Read data from the PLC
-                self._data = await self._websockets_connector.read_data()
+                try:
+                    self._data = await self._websockets_connector.read_data()
+                except PLCDataParsingException as e:
+                    if self._ui_initialized:
+                        self._status_field.model.set_value(f"PLC read data prasing error: {e}")
+                        status_update_time = time.time() + STATUS_UPDATE_TIME_SECONDS
+
                 self._actual_cyclic_read_time = time.time() - self._last_cyclic_read_time
                 self._last_cyclic_read_time = time.time()
                 self._actual_cyclic_read_time_field.model.set_value(self._actual_cyclic_read_time)
@@ -293,8 +301,9 @@ class UIBuilder:
             except Exception as e:
                 if self._ui_initialized:
                     self._status_field.model.set_value(f"Error reading data from PLC: {e}")
-                    status_update_time = time.time() + 1
-                time.sleep(1)
+                    status_update_time = time.time() + STATUS_UPDATE_TIME_SECONDS
+                time.sleep(STATUS_UPDATE_TIME_SECONDS)
+
 
     ####################################
     ####################################
