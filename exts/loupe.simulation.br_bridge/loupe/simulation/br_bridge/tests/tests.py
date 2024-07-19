@@ -7,7 +7,7 @@ from loupe.simulation.br_bridge.websockets_driver import WebsocketsDriver
 
 # pylint: disable=W0212
 
-class TestParseName_SingleVar(omni.kit.test.AsyncTestCase):
+class TestParseNameSingleVar(omni.kit.test.AsyncTestCase):
     """Tests for single variable parsing."""
 
     # Run before every test
@@ -87,7 +87,7 @@ class TestParseName_SingleVar(omni.kit.test.AsyncTestCase):
                          msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
 
 
-class TestParseName_SingleArray(omni.kit.test.AsyncTestCase):
+class TestParseNameSingleArray(omni.kit.test.AsyncTestCase):
     """Tests for single array parsing."""
 
     # Run before every test
@@ -200,7 +200,7 @@ class TestParseName_SingleArray(omni.kit.test.AsyncTestCase):
 
 
 
-class TestParseName_Multipart(omni.kit.test.AsyncTestCase):
+class TestParseNameMultipart(omni.kit.test.AsyncTestCase):
     """Tests for multi-part parsing."""
 
     # Run before every test
@@ -392,7 +392,7 @@ class TestParseName_Multipart(omni.kit.test.AsyncTestCase):
                              str(len(correct_output["Program"]["myStruct"]["myStruct"]["myArray"])))
 
 
-class TestParseName_Complex(omni.kit.test.AsyncTestCase):
+class TestParseNameComplex(omni.kit.test.AsyncTestCase):
     """Tests for complex variable parsing."""
 
     # Run before every test
