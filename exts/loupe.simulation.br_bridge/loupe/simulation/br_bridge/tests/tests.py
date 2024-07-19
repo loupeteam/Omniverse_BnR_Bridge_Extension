@@ -196,7 +196,6 @@ class TestParseName_SingleArray(omni.kit.test.AsyncTestCase):
                          correct_output, 
                          msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
 
-
     def test_exists_dict(self):
         starting_dict = {"gBool" : {'a' : 1}}
         value = 30
@@ -225,7 +224,7 @@ class TestParseName_Multipart(omni.kit.test.AsyncTestCase):
         pass
 
     def test_top_struct(self):
-        ""
+        """Test writing to a global struct."""
         value = 30
         input_name = "myStruct.subStruct.var"
         correct_output = {  
@@ -242,8 +241,8 @@ class TestParseName_Multipart(omni.kit.test.AsyncTestCase):
                          correct_output, 
                          msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
 
-    def test_task_level_struct(self):
-        """Test writing to a struct inside of a program"""
+    def test_program_level_struct(self):
+        """Test writing to a struct inside of a program."""
         value = 30
         input_name = "Program:struct.var"
         correct_output = {
@@ -258,7 +257,7 @@ class TestParseName_Multipart(omni.kit.test.AsyncTestCase):
                          correct_output, 
                          msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
 
-    def test_task_array_member(self):
+    def test_program_array_member(self):
         """Test writing to a specific array inside a program"""
         value = 30
         array_size = 30
@@ -346,6 +345,9 @@ class TestParseName_Multipart(omni.kit.test.AsyncTestCase):
         self.assertEqual(actual_output, 
                          correct_output, 
                          msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
+        self.assertEqual(len(actual_output["myStruct"]["myArray"]),
+                         len(correct_output["myStruct"]["myArray"]),
+                         msg="Array length should not have changed")
         
     def test_deep_array_inside_struct(self):
         """Writing to a deeply nested array inside of a struct."""
@@ -371,9 +373,9 @@ class TestParseName_Multipart(omni.kit.test.AsyncTestCase):
             self.assertEqual(actual_output, 
                             correct_output, 
                             msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
-        # Task
+        # Program
         correct_output =  {
-                            "Task": 
+                            "Program": 
                             {
                                 "myStruct": 
                                 {
@@ -390,14 +392,14 @@ class TestParseName_Multipart(omni.kit.test.AsyncTestCase):
         
         
         for value in self.test_different_data_types:
-            actual_output = self.driver._parse_name({}, "Task:myStruct.myStruct.myArray[0]", value)
-            correct_output["Task"]["myStruct"]["myStruct"]["myArray"][0] = value
+            actual_output = self.driver._parse_name({}, "Program:myStruct.myStruct.myArray[0]", value)
+            correct_output["Program"]["myStruct"]["myStruct"]["myArray"][0] = value
             self.assertEqual(actual_output, 
                             correct_output, 
                             msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
-            self.assertEqual(len(correct_output["Task"]["myStruct"]["myStruct"]["myArray"]), 1, 
+            self.assertEqual(len(correct_output["Program"]["myStruct"]["myStruct"]["myArray"]), 1, 
                              msg="Array length changed from 0 to" + 
-                             str(len(correct_output["Task"]["myStruct"]["myStruct"]["myArray"])))
+                             str(len(correct_output["Program"]["myStruct"]["myStruct"]["myArray"])))
 
 
 class TestParseName_Complex(omni.kit.test.AsyncTestCase):
@@ -415,8 +417,8 @@ class TestParseName_Complex(omni.kit.test.AsyncTestCase):
 
     def test_deep_mix_of_nesting(self):
         value = 30
-        actual_output = self.driver._parse_name({}, "Task:myStruct.myArray[1].myStruct.arr[3].myVar", value)
-        correct_output =  {   "Task": {
+        actual_output = self.driver._parse_name({}, "Program:myStruct.myArray[1].myStruct.arr[3].myVar", value)
+        correct_output =  {   "Program": {
                             "myStruct": 
                             {
                                 "myArray": 
