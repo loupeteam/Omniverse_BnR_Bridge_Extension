@@ -86,10 +86,10 @@ class WebsocketsDriver():
             dict: A dictionary containing the parsed data from the PLC
 
         """
-        parsed_data = {}
+        plc_var_dict = {}
 
         if not self._read_names:
-            return parsed_data
+            return plc_var_dict
 
         # Send request for data
         payload_obj = {
@@ -112,9 +112,9 @@ class WebsocketsDriver():
         elif "type" not in response:
             raise PLCDataParsingException("No type in response")
         else:
-            parsed_data = self._parse_plc_response(response)
+            plc_var_dict = self._parse_plc_response(response)
             
-        return parsed_data
+        return plc_var_dict
     
     def _parse_plc_response(self, response):
         """
@@ -124,12 +124,14 @@ class WebsocketsDriver():
         Args:
             response (dict): A dictionary containing the data to be parsed
         """
-        parsed_data = {}
+        plc_var_dict = {}
         if response["type"] == "readresponse":
             try:
                 for plc_var_dict in response["data"]:
-                    for key, value in plc_var_dict.items():
-                        parsed_data = self._parse_name(parsed_data, key, value)
+                    for plc_var, plc_var_value in plc_var_dict.items():
+                        plc_var_dict = self._parse_flat_plc_var_to_dictionary(plc_var_dict,
+                                                                              plc_var,
+                                                                              plc_var_value)
             except Exception as e:
                 raise PLCDataParsingException(str(e))
         elif response["type"] == "writeresponse":
