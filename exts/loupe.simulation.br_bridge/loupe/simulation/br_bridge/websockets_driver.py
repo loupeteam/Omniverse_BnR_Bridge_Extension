@@ -40,23 +40,17 @@ class WebsocketsDriver():
         self._connection = None
 
         self._read_names = list()
-        self._read_struct_def = dict()
 
-    def add_read(self, name : str, structure_def = None):
+    def add_read(self, plc_var : str):
         """
-        Adds a variable to the list of data to read.
+        Adds a variable to the cyclic read list.
 
         Args:
-            name (str): The name of the data to be read. "my_struct.my_array[0].my_var"
-            structure_def (optional): The structure definition of the data.
+            plc_var (str): The plc_var of the data to be read. "Program:my_struct.my_array[0].my_var"
 
         """
-        if name not in self._read_names:
-            self._read_names.append(name)
-
-        if structure_def is not None:
-            if name not in self._read_struct_def:
-                self._read_struct_def[name] = structure_def
+        if plc_var not in self._read_names:
+            self._read_names.append(plc_var)
 
     def clear_read_list(self):
         self._read_names = []
