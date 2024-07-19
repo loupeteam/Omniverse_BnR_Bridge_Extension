@@ -127,7 +127,7 @@ class WebsocketsDriver():
                                                                               plc_var,
                                                                               plc_var_value)
             except Exception as e:
-                raise PLCDataParsingException(str(e))
+                raise PLCDataParsingException(str(e)) from e
         elif response["type"] == "writeresponse":
             pass
         return parsed_data
