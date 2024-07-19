@@ -130,7 +130,7 @@ class WebsocketsDriver():
                 raise PLCDataParsingException(str(e)) from e
         elif response["type"] == "writeresponse":
             pass
-        return parsed_data
+        return plc_var_dict
     
     def _parse_name(self, name_dict, name, value):
 
