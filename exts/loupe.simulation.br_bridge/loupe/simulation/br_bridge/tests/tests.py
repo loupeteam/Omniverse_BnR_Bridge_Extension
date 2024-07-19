@@ -8,7 +8,9 @@ import omni.kit.test
 from loupe.simulation.br_bridge.websockets_driver import WebsocketsDriver
 
 # pylint: disable=W0212
+
 class TestParseName_SingleVar(omni.kit.test.AsyncTestCase):
+    """Tests for single variable parsing."""
 
     # Run before every test
     async def setUp(self):
@@ -92,6 +94,7 @@ class TestParseName_SingleVar(omni.kit.test.AsyncTestCase):
 
 
 class TestParseName_SingleArray(omni.kit.test.AsyncTestCase):
+    """Tests for single array parsing."""
 
     # Run before every test
     async def setUp(self):
@@ -209,8 +212,9 @@ class TestParseName_SingleArray(omni.kit.test.AsyncTestCase):
 
 
 class TestParseName_Multipart(omni.kit.test.AsyncTestCase):
+    """Tests for multi-part parsing."""
 
-        # Run before every test
+    # Run before every test
     async def setUp(self):
         self.driver = WebsocketsDriver(ip='127.0.0.1', port=8000)
         self.test_output_string = "correct: {correct}\nactual: {actual}\n\n"
@@ -270,6 +274,7 @@ class TestParseName_Multipart(omni.kit.test.AsyncTestCase):
 
 
     def test_array_index_member_first(self):
+        """Test writing to first member of an array"""
         value = 30
         actual_output = self.driver._parse_name({}, "myArray[0].myVar", value)
         correct_output =  {
