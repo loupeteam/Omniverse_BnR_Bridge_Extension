@@ -121,8 +121,8 @@ class WebsocketsDriver():
         plc_var_dict = {}
         if response["type"] == "readresponse":
             try:
-                for plc_var_dict in response["data"]:
-                    for plc_var, plc_var_value in plc_var_dict.items():
+                for var_dict in response["data"]:
+                    for plc_var, plc_var_value in var_dict.items():
                         plc_var_dict = self._parse_flat_plc_var_to_dict(plc_var_dict,
                                                                         plc_var,
                                                                         plc_var_value)
