@@ -208,10 +208,6 @@ class TestParseNameMultipart(omni.kit.test.AsyncTestCase):
         self.driver = WebsocketsDriver(ip='127.0.0.1', port=8000)
         self.test_output_string = "correct: {correct}\nactual: {actual}\n\n"
         self.test_different_data_types = ["30", 30, -18935, 30.151535, True, False]
-    
-    # Run after every test
-    async def tearDown(self):
-        pass
 
     def test_top_struct(self):
         """Test writing to a global struct."""
@@ -400,10 +396,6 @@ class TestParseNameComplex(omni.kit.test.AsyncTestCase):
         self.name_dict = {}
         self.driver = WebsocketsDriver(ip='127.0.0.1', port=8000)
         self.test_output_string = "correct: {correct}\nactual: {actual}\n\n"
-    
-    # Run after every test
-    async def tearDown(self):
-        pass
 
     def test_deep_mix_of_nesting(self):
         value = 30
