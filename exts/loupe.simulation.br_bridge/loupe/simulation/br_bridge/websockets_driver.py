@@ -123,79 +123,96 @@ class WebsocketsDriver():
             try:
                 for plc_var_dict in response["data"]:
                     for plc_var, plc_var_value in plc_var_dict.items():
-                        plc_var_dict = self._parse_flat_plc_var_to_dictionary(plc_var_dict,
-                                                                              plc_var,
-                                                                              plc_var_value)
+                        plc_var_dict = self._parse_flat_plc_var_to_dict(plc_var_dict,
+                                                                        plc_var,
+                                                                        plc_var_value)
             except Exception as e:
                 raise PLCDataParsingException(str(e)) from e
         elif response["type"] == "writeresponse":
             pass
         return plc_var_dict
     
-    def _parse_name(self, name_dict, name, value):
+    def _parse_flat_plc_var_to_dict(self, plc_var_dict, plc_var, value):
+        """
+        Convert a flat, string representation of a PLC var into a dictionary.
 
-        name_parts = re.split('[:.]', name)
+        This function uses recursion to build up the complete dictionary of PLC variables, and values.
+        
+        This is performed every read, rather than being cached, to not assume PLC variable values
+        to be at their previous value if they are not being actively read. Caching can be
+        performed in the usage of this library if necessary.
+
+        Args:
+            plc_var_dict (dict): The dictionary to write the value into
+            plc_var (str): The variable name in flattened string form ("Program:myStruct.myVar")
+            value (any): The value to write to the dictionary entry
+        """
+        name_parts = re.split('[:.]', plc_var)
 
         if len(name_parts) > 1:
-            # Multiple parts to passed-in name (e.g. Program:myStruct[3].myVar has 3 parts)
+            # Multiple parts to passed-in plc_var (e.g. Program:myStruct[3].myVar has 3 parts)
             # From here we want to use recursion to assign a dictionary value (i.e. sub dictionary) to the first part.
 
             first_part_is_array = '[' in name_parts[0]
 
             ## Ensure corresponding subdictionary exists
             if first_part_is_array:
-                array_name, index = name_parts[0].split("[")
+                array_plc_var, index = name_parts[0].split("[")
                 index = int(index[:-1])
                 
-                if array_name not in name_dict or not isinstance(name_dict[array_name], list):
-                    name_dict[array_name] = []
+                if array_plc_var not in plc_var_dict or not isinstance(plc_var_dict[array_plc_var], list):
+                    plc_var_dict[array_plc_var] = []
                 
                 # Extend if necessary
-                if index >= len(name_dict[array_name]):
-                    name_dict[array_name].extend([None] * (index - len(name_dict[array_name]) + 1))
+                if index >= len(plc_var_dict[array_plc_var]):
+                    extend_by = index - len(plc_var_dict[array_plc_var]) + 1
+                    plc_var_dict[array_plc_var].extend([None] * extend_by)
 
                 # Ensure array index location has dict-typed value
-                if not isinstance(name_dict[array_name][index], dict):
-                    name_dict[array_name][index] = {}
+                if not isinstance(plc_var_dict[array_plc_var][index], dict):
+                    plc_var_dict[array_plc_var][index] = {}
                     
-                existing_sub_dict = name_dict[array_name][index]        
+                existing_sub_dict = plc_var_dict[array_plc_var][index]
             else:
-                member_name = name_parts[0]
+                member_plc_var = name_parts[0]
                 
                 ## Ensure corresponding subdictionary exists
-                if member_name not in name_dict or not isinstance(name_dict[member_name], dict):
-                    name_dict[member_name] = {}
+                if member_plc_var not in plc_var_dict or not isinstance(plc_var_dict[member_plc_var], dict):
+                    plc_var_dict[member_plc_var] = {}
                 
-                existing_sub_dict = name_dict[member_name]
+                existing_sub_dict = plc_var_dict[member_plc_var]
             
             # Get subdictionary from using remaining part of path
-            sub_name = '.'.join(name_parts[1:])
-            sub_dict = self._parse_name(existing_sub_dict , sub_name, value)
+            sub_plc_var = '.'.join(name_parts[1:])
+            sub_dict = self._parse_flat_plc_var_to_dict(existing_sub_dict,
+                                                              sub_plc_var,
+                                                              value)
             
             if first_part_is_array:
-                name_dict[array_name][index] = sub_dict
+                plc_var_dict[array_plc_var][index] = sub_dict
             else:
-                name_dict[member_name] = sub_dict
+                plc_var_dict[member_plc_var] = sub_dict
         else:
-            # only one part to passed in name
+            # only one part to passed in plc_var
 
             if '[' in name_parts[0]:
-                array_name, index = name_parts[0].split("[")
+                array_plc_var, index = name_parts[0].split("[")
                 index = int(index[:-1])
                 
-                if array_name not in name_dict or not isinstance(name_dict[array_name], list):
-                    name_dict[array_name] = []
+                if array_plc_var not in plc_var_dict or not isinstance(plc_var_dict[array_plc_var], list):
+                    plc_var_dict[array_plc_var] = []
                 
                 # Extend if necessary
-                if index >= len(name_dict[array_name]):
-                    name_dict[array_name].extend([None] * (index - len(name_dict[array_name]) + 1))
+                if index >= len(plc_var_dict[array_plc_var]):
+                    extend_by = (index - len(plc_var_dict[array_plc_var]) + 1)
+                    plc_var_dict[array_plc_var].extend([None] * extend_by)
                 
-                name_dict[array_name][index] = value
+                plc_var_dict[array_plc_var][index] = value
             else:
                 # Write value (regardless of whether it exists or not)
-                name_dict[name_parts[0]] = value
+                plc_var_dict[name_parts[0]] = value
                 
-        return name_dict
+        return plc_var_dict
     
     async def connect(self):
         """
