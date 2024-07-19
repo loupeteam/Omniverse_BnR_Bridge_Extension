@@ -1,8 +1,6 @@
-name_dict = {}
-value = "30"
-array_size = 30
-passes = 0
-fails = 0
+"""
+Test a wide variety of inputs for parsing PLC representations of data into a dictionary
+"""
 
 import omni.kit.test
 from loupe.simulation.br_bridge.websockets_driver import WebsocketsDriver
