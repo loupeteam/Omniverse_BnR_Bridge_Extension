@@ -16,11 +16,12 @@ from carb.settings import get_settings
 from .websockets_driver import WebsocketsDriver
 
 from .global_variables import EXTENSION_NAME
-from .BRBridge import EVENT_TYPE_DATA_READ, EVENT_TYPE_DATA_READ_REQ, EVENT_TYPE_DATA_WRITE_REQ, EVENT_TYPE_DATA_INIT
+from .br_bridge import EVENT_TYPE_DATA_READ, EVENT_TYPE_DATA_READ_REQ, EVENT_TYPE_DATA_WRITE_REQ, EVENT_TYPE_DATA_INIT
 
 import threading
 from threading import RLock
 
+import asyncio
 import json
 
 import time
@@ -58,7 +59,7 @@ class UIBuilder:
         self.write_req = self._event_stream.create_subscription_to_push_by_type(EVENT_TYPE_DATA_WRITE_REQ, self.on_write_req_event)
         self._event_stream.push(event_type=EVENT_TYPE_DATA_INIT, payload={'data': {}})
 
-        self._thread = threading.Thread(target=self._update_plc_data)
+        self._thread = threading.Thread(target=lambda: asyncio.run(self._update_plc_data()))
         self._thread.start()
 
     ###################################################################################
@@ -73,7 +74,7 @@ class UIBuilder:
 
         if(not self._thread_is_alive):
             self._thread_is_alive = True
-            self._thread = threading.Thread(target=self._update_plc_data)
+            # TODO confirm this redefinition is not needed: self._thread = threading.Thread(target=self._update_plc_data)
             self._thread.start()
 
     def on_timeline_event(self, event):
@@ -134,7 +135,7 @@ class UIBuilder:
 
                 with ui.HStack(spacing=5, height=0):
                     ui.Label("PLC Port")
-                    self._plc_port_field = ui.StringField(ui.SimpleStringModel(self._websockets_connector.port))
+                    self._plc_port_field = ui.IntField(ui.SimpleIntModel(self._websockets_connector.port))
                     self._plc_port_field.model.add_value_changed_fn(self._on_plc_port_changed)
 
                 with ui.HStack(spacing=5, height=0):
@@ -153,6 +154,14 @@ class UIBuilder:
                 with ui.HStack(spacing=5, height=100):
                     ui.Label("Variables")
                     self._monitor_field = ui.StringField(ui.SimpleStringModel("{}"), multiline=True, read_only=True)
+
+        with ui.CollapsableFrame("Dev Tools", collapsed=True):
+            with ui.VStack(spacing=5, height=0):
+                self._test_read_field = ui.StringField(ui.SimpleStringModel("LuxProg:counter"), multiline=True, read_only=False) # TODO remove test var
+                self._test_read_button = ui.Button(text="Add Var To Cyclic Reads", 
+                                                   clicked_fn=lambda: self._websockets_connector.add_read(name=self._test_read_field.model.as_string))
+                self._clear_read_list_button = ui.Button(text="Clear Read List", 
+                                                         clicked_fn=self._websockets_connector.clear_read_list) # TODO cleanup
 
         self._ui_initialized = True
 
@@ -177,7 +186,7 @@ class UIBuilder:
         with self.write_lock:
             self.write_queue[name] = value
 
-    def _update_plc_data(self):
+    async def _update_plc_data(self):
 
         thread_start_time = time.time()
         status_update_time = time.time()
@@ -204,10 +213,10 @@ class UIBuilder:
             try:
                 # Start the communication if it is not initialized
                 if (not self._communication_initialized) and (self._enable_communication):
-                    self._websockets_connector.connect()
+                    await self._websockets_connector.connect()
                     self._communication_initialized = True
                 elif (self._communication_initialized) and (not self._websockets_connector.is_connected()):
-                    self._websockets_connector.disconnect()
+                    await self._websockets_connector.disconnect()
 
                 if status_update_time < time.time():
                     if self._websockets_connector.is_connected():
@@ -223,14 +232,14 @@ class UIBuilder:
                             # TODO would it be better if this was a deepcopy?
                             values = self.write_queue
                             self.write_queue = dict()
-                        self._websockets_connector.write_data(values)
+                        await self._websockets_connector.write_data(values)
                 except Exception as e:
                     if self._ui_initialized:
                         self._status_field.model.set_value(f"Error writing data to PLC: {e}")
                         status_update_time = time.time() + 1
 
                 # Read data from the PLC
-                self._data = self._websockets_connector.read_data()
+                self._data = await self._websockets_connector.read_data()
 
                 # Push the data to the event stream
                 self._event_stream.push(event_type=EVENT_TYPE_DATA_READ, payload={'data': self._data})
