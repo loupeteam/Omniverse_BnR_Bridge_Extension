@@ -25,12 +25,11 @@ class WebsocketsDriver():
         ip (string): ip address of the PLC
         port (int): port of the PLC
         connection (WebSocketClientProtocol):
-        _read_names (list): A list of names for reading data.
-        _read_struct_def (dict): A dictionary that maps names to structure definitions.
+        _read_names (list): A list of plc var names for reading data.
 
     """
 
-    def __init__(self, ip=None, port=None):             
+    def __init__(self, ip=None, port=None):       
         """
         Initializes an instance of the WebsocketsDriver class.
 
@@ -53,11 +52,12 @@ class WebsocketsDriver():
             self._read_names.append(plc_var)
 
     def clear_read_list(self):
+        """Clear the current list of variables to read from the PLC."""
         self._read_names = []
 
     async def write_data(self, data : dict ):
         """
-        Writes data to the target device.
+        Writes data to the PLC.
 
         Args:
             data (dict): A dictionary containing the data to be written to the PLC
@@ -220,5 +220,3 @@ class WebsocketsDriver():
 
         """
         return self._connection.open
-
-
