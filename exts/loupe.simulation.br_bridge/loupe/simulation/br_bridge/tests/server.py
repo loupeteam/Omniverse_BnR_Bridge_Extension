@@ -15,7 +15,7 @@ import websockets.server
 fake_plc_data = [{"LuxProg:counter": 0}]
 INITIAL_VALUE_NEW_READ_VAR = 0
 
-async def mock_omjson_plc(websocket, path):
+async def mock_omjson_plc(websocket):
     async for message in websocket:
         response = {
                 "type": "readresponse",
