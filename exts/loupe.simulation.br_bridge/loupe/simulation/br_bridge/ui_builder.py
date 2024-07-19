@@ -215,6 +215,15 @@ class UIBuilder:
             self.queue_write(variable['name'], variable['value'])
 
     def queue_write(self, name, value):
+        """
+        Add PLC variable to the write queue for sending variables and values to the PLC.
+        
+        Args
+        name: str
+            The name of the variable to write to.
+        value:
+            The value to write to the variable.
+        """
         with self.write_lock:
             self.write_queue[name] = value
 
