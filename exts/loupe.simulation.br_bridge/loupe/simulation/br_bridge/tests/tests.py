@@ -340,10 +340,63 @@ class TestParseName_Multipart(omni.kit.test.AsyncTestCase):
         self.assertEqual(actual_output, 
                          correct_output, 
                          msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
+        
+    def test_deep_array_inside_struct(self):
+        """Writing to a deeply nested array inside of a struct."""
+        correct_output =  {
+                            "myStruct": 
+                            {
+                                "myStruct": 
+                                {
+                                    "myStruct": 
+                                    {
+                                        "myArray": 
+                                        [
+                                            None
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+        # Global
+        for value in self.test_different_data_types:
+            actual_output = self.driver._parse_name({}, "myStruct.myStruct.myStruct.myArray[0]", value)
+            correct_output["myStruct"]["myStruct"]["myStruct"]["myArray"][0] = value
+            self.assertEqual(actual_output, 
+                            correct_output, 
+                            msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
+        # Task
+        correct_output =  {
+                            "Task": 
+                            {
+                                "myStruct": 
+                                {
+                                    "myStruct": 
+                                    {
+                                        "myArray": 
+                                        [
+                                            None
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+        
+        
+        for value in self.test_different_data_types:
+            actual_output = self.driver._parse_name({}, "Task:myStruct.myStruct.myArray[0]", value)
+            correct_output["Task"]["myStruct"]["myStruct"]["myArray"][0] = value
+            self.assertEqual(actual_output, 
+                            correct_output, 
+                            msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
+            self.assertEqual(len(correct_output["Task"]["myStruct"]["myStruct"]["myArray"]), 1, 
+                             msg="Array length changed from 0 to" + 
+                             str(len(correct_output["Task"]["myStruct"]["myStruct"]["myArray"])))
 
 
 class TestParseName_Complex(omni.kit.test.AsyncTestCase):
-    
+    """Tests for complex variable parsing."""
+
     # Run before every test
     async def setUp(self):
         self.name_dict = {}
