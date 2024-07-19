@@ -26,6 +26,17 @@ import json
 from websockets.exceptions import ConnectionClosed
 
 import time
+
+DEFAULT_DEV_TEST_UI_VAR = "LuxProg:counter"
+DEFAULT_DEV_TEST_UI_VALUE = "1000"
+TEST_PROGRAM_VARS = ["LuxProg:counter", 
+                     "LuxProg:counter2", 
+                     "LuxProg:bool", 
+                     "LuxProg:int", 
+                     "LuxProg:dint", 
+                     "LuxProg:real", 
+                     "LuxProg:lreal", 
+                     "LuxProg:string"]
  
 class UIBuilder:
     def __init__(self):
@@ -164,16 +175,16 @@ class UIBuilder:
                 self._actual_cyclic_read_time_field = ui.FloatField(ui.SimpleFloatModel(self._actual_cyclic_read_time), multiline=False, read_only=True)
                 self._test_read_button = ui.Button(text="Add variables for test program", 
                                                    clicked_fn=self._add_variables_for_test_program)
-                self._test_read_field = ui.StringField(ui.SimpleStringModel("LuxProg:counter"), multiline=True, read_only=False) # TODO remove test var
+                self._test_read_field = ui.StringField(ui.SimpleStringModel(DEFAULT_DEV_TEST_UI_VAR), multiline=True, read_only=False)
                 self._test_read_button = ui.Button(text="Add Var To Cyclic Reads", 
                                                    clicked_fn=lambda: self._websockets_connector.add_read(name=self._test_read_field.model.as_string))
                 self._clear_read_list_button = ui.Button(text="Clear Read List", 
-                                                         clicked_fn=self._websockets_connector.clear_read_list) # TODO cleanup
+                                                         clicked_fn=self._websockets_connector.clear_read_list)
 
                 self._separator = ui.Separator()
                 
-                self._test_write_field = ui.StringField(ui.SimpleStringModel("LuxProg:counter"), multiline=True, read_only=False) # TODO remove test var
-                self._test_write_field_value = ui.StringField(ui.SimpleStringModel("1000"), multiline=True, read_only=False) # TODO remove test var
+                self._test_write_field = ui.StringField(ui.SimpleStringModel(DEFAULT_DEV_TEST_UI_VAR), multiline=True, read_only=False)
+                self._test_write_field_value = ui.StringField(ui.SimpleStringModel(DEFAULT_DEV_TEST_UI_VALUE), multiline=True, read_only=False)
                 self._test_read_button = ui.Button(text="Write value",
                                                    clicked_fn=lambda: self.queue_write(name=self._test_write_field.model.as_string, value=self._test_write_field_value.model.as_string))
 
@@ -183,8 +194,7 @@ class UIBuilder:
         """
         Add a stock set of variables, corresponding to test variables in the sample AS program, to the readlist.
         """
-        test_vars = ["LuxProg:counter", "LuxProg:counter2", "LuxProg:bool", "LuxProg:int", "LuxProg:dint", "LuxProg:real", "LuxProg:lreal", "LuxProg:string"]
-        for var in test_vars:
+        for var in TEST_PROGRAM_VARS:
             self._websockets_connector.add_read(var)
 
     ####################################
