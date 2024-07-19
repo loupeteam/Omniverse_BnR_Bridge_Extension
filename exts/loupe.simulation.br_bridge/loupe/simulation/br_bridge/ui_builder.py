@@ -346,6 +346,7 @@ class UIBuilder:
     def _toggle_communication_enable(self, state):
         self._enable_communication = state.get_value_as_bool()
         if not self._enable_communication:
+            await self._websockets_connector.disconnect()
             self._communication_initialized = False
 
     def save_settings(self):
