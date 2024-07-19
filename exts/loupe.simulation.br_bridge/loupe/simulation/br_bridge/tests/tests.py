@@ -7,146 +7,223 @@ fails = 0
 import omni.kit.test
 from loupe.simulation.br_bridge.websockets_driver import WebsocketsDriver
 
-class TestParseName_1_SingleVar(omni.kit.test.AsyncTestCase):
+class TestParseName_SingleVar(omni.kit.test.AsyncTestCase):
 
     # Run before every test
     async def setUp(self):
         self.driver = WebsocketsDriver(ip='127.0.0.1', port=8000)
+        self.test_output_string = "correct: {correct}\nactual: {actual}\n\n"
+        self.test_different_data_types = ["30", 30, -18935, 30.151535, True, False]
     
     # Run after every test
     async def tearDown(self):
         pass
 
     def test_start_empty(self):
+        """Empty dictionary is populated with single var."""
         starting_dict = {}
         value = 30
-        input = "gBool"
+        input = "gVar"
         correct_output = {input: value}
 
-        actual_output = self.driver._parse_name(name_dict=starting_dict, 
-                                         name=input, 
-                                         value=value)
+        actual_output = self.driver._parse_name(name_dict=starting_dict, name=input, value=value)
 
-        self.assertEqual(actual_output, correct_output)
+        self.assertEqual(actual_output, 
+                         correct_output, 
+                         msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
+
 
     def test_start_nonempty(self):
+        """Non-empty dictionary is populated with second var."""
         starting_dict = {"gInt" : 7}
         value = 30
-        input = "gBool"
-        correct_output = {"gInt" : 7, "gBool": value}
-        actual_output = self.driver._parse_name(name_dict=starting_dict, name=input, value=value)
-        self.assertEqual(actual_output, correct_output)
+        input = "gOtherInt"
 
-    def test_override(self):
-        starting_dict = {"gBool" : 1}
+        for value in self.test_different_data_types:
+            correct_output = {"gInt" : 7, input: value}
+
+            actual_output = self.driver._parse_name(name_dict=starting_dict, name=input, value=value)
+            
+            self.assertEqual(actual_output, 
+                            correct_output, 
+                            msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
+
+
+    def test_overwrite(self):
+        """Non-empty dictionary has a single var overwritten."""
+        starting_dict = {"gVar" : 1}
+        input = "gVar"
+
+        for value in self.test_different_data_types:
+            correct_output = {"gVar": value}
+            actual_output = self.driver._parse_name(name_dict=starting_dict, name=input, value=value)
+
+            self.assertEqual(actual_output, 
+                            correct_output, 
+                            msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
+
+
+    def test_overwrite_string_list(self):
+        """Non-empty dictionary has a string list ovewritten with a different var type."""
+        starting_dict = {"gArray" : ['a', 'b', 'c']}
         value = 30
-        input = "gBool"
-        correct_output = {"gBool": value}
-        actual_output = self.driver._parse_name(name_dict=starting_dict, name=input, value=value)
-        self.assertEqual(actual_output, correct_output)
+        input = "gArray"
+        correct_output = {"gArray": value}
 
-    def test_overwriteList(self):
-        starting_dict = {"gBool" : ['a', 'b', 'c']}
+        actual_output = self.driver._parse_name(name_dict=starting_dict, name=input, value=value)
+
+        self.assertEqual(actual_output, 
+                         correct_output, 
+                         msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
+
+    def test_overwrite_struct(self):
+        """Overwrite a struct with a different var type."""
+        starting_dict = {"gStruct" : {'a': 1}}
         value = 30
-        input = "gBool"
-        correct_output = {"gBool": value}
+        input = "gStruct"
+        correct_output = {"gStruct": value}
+
         actual_output = self.driver._parse_name(name_dict=starting_dict, name=input, value=value)
-        self.assertEqual(actual_output, correct_output)
 
-    def test_overwriteDict(self):
-        starting_dict = {"gBool" : {'a': 1}}
-        value = 30
-        input = "gBool"
-        correct_output = {"gBool": value}
-        actual_output = self.driver._parse_name(name_dict=starting_dict, name=input, value=value)
-        self.assertEqual(actual_output, correct_output)
+        self.assertEqual(actual_output, 
+                         correct_output, 
+                         msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
 
-class TestParseName_2_SingleArr(omni.kit.test.AsyncTestCase):
 
-        # Run before every test
+class TestParseName_SingleArray(omni.kit.test.AsyncTestCase):
+
+    # Run before every test
     async def setUp(self):
         self.driver = WebsocketsDriver(ip='127.0.0.1', port=8000)
+        self.test_output_string = "correct: {correct}\nactual: {actual}\n\n"
+        self.test_different_data_types = ["30", 30, -18935, 30.151535, True, False]
     
     # Run after every test
     async def tearDown(self):
         pass
     
     def test_start_empty(self):
+        """Add a list to an existing dictionary"""
         starting_dict = {}
         value = 30
         input = "gBool[2]"
         correct_output = {"gBool": [None, None, value]}
+
         actual_output = self.driver._parse_name(name_dict=starting_dict, name=input, value=value)
-        self.assertEqual(actual_output, correct_output)
+
+        self.assertEqual(actual_output, 
+                         correct_output, 
+                         msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
 
     def test_start_nonempty(self):
+        """Read a single element of a list, from a dict already containing data."""
         starting_dict = {"gInt" : 7}
-        value = 30
+        value = True
         input = "gBool[2]"
         correct_output = {"gInt" : 7, "gBool": [None, None, value]}
+
         actual_output = self.driver._parse_name(name_dict=starting_dict, name=input, value=value)
-        self.assertEqual(actual_output, correct_output)
+
+        self.assertEqual(actual_output, 
+                         correct_output, 
+                         msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
+
     
     def test_exists_empty_list(self):
+        """Read a single element of a list, whose reprsentation is currently an empty list."""
         starting_dict = {"gBool" : []}
-        value = 30
+        value = False
         input = "gBool[2]"
         correct_output = {"gBool": [None, None, value]}
+
         actual_output = self.driver._parse_name(name_dict=starting_dict, name=input, value=value)
-        self.assertEqual(actual_output, correct_output)
+
+        self.assertEqual(actual_output, 
+                         correct_output, 
+                         msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
+
     
     def test_exists_short_list(self):
-        starting_dict = {"gBool" : [1]}
-        value = 30
+        """Read a single element of a list, whose reprsentation is currently a list that's too short."""
+        starting_dict = {"gBool" : [False]}
+        value = True
         input = "gBool[2]"
-        correct_output = {"gBool": [1, None, value]}
+        correct_output = {"gBool": [False, None, value]}
+
         actual_output = self.driver._parse_name(name_dict=starting_dict, name=input, value=value)
-        self.assertEqual(actual_output, correct_output)
+
+        self.assertEqual(actual_output, 
+                         correct_output, 
+                         msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
+
 
     def test_exists_right_size_list(self):
-        starting_dict = {"gBool" : [1, 2, 3]}
+        """Read a single element of a list, whose representation is a list where requested index is the last element."""
+        starting_dict = {"gInt" : [1, 2, 3]}
         value = 30
-        input = "gBool[2]"
-        correct_output = {"gBool": [1, 2, value]}
+        input = "gInt[2]"
+        correct_output = {"gInt": [1, 2, value]}
+
         actual_output = self.driver._parse_name(name_dict=starting_dict, name=input, value=value)
-        self.assertEqual(actual_output, correct_output)
+
+        self.assertEqual(actual_output, 
+                         correct_output, 
+                         msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
+
     
     def test_exists_long_list(self):
         starting_dict = {"gBool" : [1, 2, 3, 4, 5]}
         value = 30
         input = "gBool[2]"
         correct_output = {"gBool": [1, 2, value, 4, 5]}
+
         actual_output = self.driver._parse_name(name_dict=starting_dict, name=input, value=value)
-        self.assertEqual(actual_output, correct_output)
+
+        self.assertEqual(actual_output, 
+                         correct_output, 
+                         msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
+
     
     def test_exists_num(self):
         starting_dict = {"gBool" : 40}
         value = 30
         input = "gBool[2]"
         correct_output = {"gBool": [None, None, value]}
+
         actual_output = self.driver._parse_name(name_dict=starting_dict, name=input, value=value)
-        self.assertEqual(actual_output, correct_output)
+
+        self.assertEqual(actual_output, 
+                         correct_output, 
+                         msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
+
     
     def test_exists_dict(self):
         starting_dict = {"gBool" : {'a' : 1}}
         value = 30
         input = "gBool[2]"
         correct_output = {"gBool": [None, None, value]}
+
         actual_output = self.driver._parse_name(name_dict=starting_dict, name=input, value=value)
-        self.assertEqual(actual_output, correct_output)
+
+        self.assertEqual(actual_output, 
+                         correct_output, 
+                         msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
 
 
-class TestParseName_3_Multipart(omni.kit.test.AsyncTestCase):
+
+class TestParseName_Multipart(omni.kit.test.AsyncTestCase):
 
         # Run before every test
     async def setUp(self):
         self.driver = WebsocketsDriver(ip='127.0.0.1', port=8000)
+        self.test_output_string = "correct: {correct}\nactual: {actual}\n\n"
+        self.test_different_data_types = ["30", 30, -18935, 30.151535, True, False]
     
     # Run after every test
     async def tearDown(self):
         pass
 
-    def test_top_struct(self) -> None:
+    def test_top_struct(self):
 
         value = 30
         input = "myStruct.subStruct.var"
@@ -157,11 +234,16 @@ class TestParseName_3_Multipart(omni.kit.test.AsyncTestCase):
                     }
                 }
             }
+        
         actual_output = self.driver._parse_name(name_dict={}, name=input, value=value)
-        self.assertEqual(actual_output, correct_output)
 
-    def test_task_struct(self) -> None:
+        self.assertEqual(actual_output, 
+                         correct_output, 
+                         msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
 
+
+    def test_task_level_struct(self):
+        """Test writing to a struct inside of a program"""
         value = 30
         input = "Program:struct.var"
         correct_output = {
@@ -171,9 +253,13 @@ class TestParseName_3_Multipart(omni.kit.test.AsyncTestCase):
                 }
             }
         actual_output = self.driver._parse_name(name_dict={}, name=input, value=value)
-        self.assertEqual(actual_output, correct_output)
+        
+        self.assertEqual(actual_output, 
+                         correct_output, 
+                         msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
 
-    def test_task_array_member(self) -> None:
+
+    def test_task_array_member(self):
 
         value = 30
         array_size = 30
@@ -182,38 +268,45 @@ class TestParseName_3_Multipart(omni.kit.test.AsyncTestCase):
         correct_output["Program"]["array"][array_size - 1] = value
         
         actual_output = self.driver._parse_name(name_dict={}, name=input, value=value)
-        msg = "\n" + str(correct_output) + "\n" + str(actual_output)
-        self.assertEqual(actual_output, correct_output, msg=msg)
+        
+        self.assertEqual(actual_output, 
+                         correct_output, 
+                         msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
+
 
     def test_array_index_member_first(self):
         value = 30
         actual_output = self.driver._parse_name({}, "myArray[0].myVar", value)
-        expected =  {
+        correct_output =  {
                         "myArray": 
                         [
                             {"myVar": value}
                         ]
                     }
                     
-        self.assertEqual(actual_output, expected)
+        self.assertEqual(actual_output, 
+                         correct_output, 
+                         msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
 
     def test_array_index_member_nth(self):
         value = 30
         actual_output = self.driver._parse_name({}, "myArray[2].myVar", value)
-        expected =  {
+        correct_output =  {
                         "myArray": 
                         [   None,
                             None,
                             {"myVar": value}
                         ]
                     }
-        self.assertEqual(actual_output, expected)
+        self.assertEqual(actual_output, 
+                         correct_output, 
+                         msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
 
     def test_array_index_member_nth_existing_replace(self):
         starting_dict = {'myVar' : 1, "myArray": [1, 2, 3, 4]}
         value = 30
         actual_output = self.driver._parse_name(starting_dict, "myArray[2].myVar", value)
-        expected =  {
+        correct_output =  {
                         "myVar" : 1,
                         "myArray": 
                         [   1,
@@ -222,12 +315,14 @@ class TestParseName_3_Multipart(omni.kit.test.AsyncTestCase):
                             4
                         ]
                     }
-        self.assertEqual(actual_output, expected)
+        self.assertEqual(actual_output, 
+                         correct_output, 
+                         msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
 
     def test_structure_array_index_member(self):
         value = 30
         actual_output = self.driver._parse_name({}, "myStruct.myArray[0].myVar", value)
-        expected =  {
+        correct_output =  {
                         "myStruct": 
                         {
                             "myArray": 
@@ -236,15 +331,27 @@ class TestParseName_3_Multipart(omni.kit.test.AsyncTestCase):
                             ]
                         }
                     }
-        self.assertEqual(actual_output, expected)
+        self.assertEqual(actual_output, 
+                         correct_output, 
+                         msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
 
 
-class TestParseName_4_Misc(omni.kit.test.AsyncTestCase):
+class TestParseName_Complex(omni.kit.test.AsyncTestCase):
+    
+    # Run before every test
+    async def setUp(self):
+        self.name_dict = {}
+        self.driver = WebsocketsDriver(ip='127.0.0.1', port=8000)
+        self.test_output_string = "correct: {correct}\nactual: {actual}\n\n"
+    
+    # Run after every test
+    async def tearDown(self):
+        pass
 
     def test_deep_mix_of_nesting(self):
         value = 30
         actual_output = self.driver._parse_name({}, "Task:myStruct.myArray[1].myStruct.arr[3].myVar", value)
-        expected =  {   "Task": {
+        correct_output =  {   "Task": {
                             "myStruct": 
                             {
                                 "myArray": 
@@ -259,8 +366,9 @@ class TestParseName_4_Misc(omni.kit.test.AsyncTestCase):
                             }
                         }
                     }
-        self.assertEqual(actual_output, expected)
-
+        self.assertEqual(actual_output, 
+                         correct_output, 
+                         msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
 
 class TestUtils(omni.kit.test.AsyncTestCase):
 
@@ -270,31 +378,14 @@ class TestUtils(omni.kit.test.AsyncTestCase):
     async def setUp(self):
         self.name_dict = {}
         self.driver = WebsocketsDriver(ip='127.0.0.1', port=8000)
+        self.test_output_string = "correct: {correct}\nactual: {actual}\n\n"
+        self.test_different_data_types = ["30", 30, -18935, 30.151535, True, False]
     
     # Run after every test
     async def tearDown(self):
         pass
 
-    def test_variable_name_parsing_global(self) -> None:
-        value = True
-        input = "gBool"
-        correct_output = {
-            input: value
-        }
-        actual_output = self.driver._parse_name(name_dict={}, name=input, value=value)
-        self.assertEqual(actual_output, correct_output)
-
-        value = -3623
-        input = "gInt"
-        correct_output = {
-            input: value
-        }
-        actual_output = self.driver._parse_name(name_dict={}, name=input, value=value)
-        self.assertEqual(actual_output, correct_output)
-
-
-    def test_variable_name_parsing_simple_struct(self) -> None:
-
+    def test_variable_name_parsing_simple_struct(self):
         value = "30"
         input = "Program:struct.var"
         correct_output = {
@@ -303,38 +394,37 @@ class TestUtils(omni.kit.test.AsyncTestCase):
                     "var": value}
                 }
             }
+        
         actual_output = self.driver._parse_name(name_dict={}, name=input, value=value)
-        self.assertEqual(actual_output, correct_output)
 
-    def test_variable_name_parsing_deep_struct(self) -> None:
+        self.assertEqual(actual_output, 
+                         correct_output, 
+                         msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
 
-        value = "30"
+    def test_variable_name_parsing_deep_struct(self):
+        """Test parsing a variable name with multiple struct levels, with multiple types of values."""
         input = "Program:struct.another_struct.another_struct.var"
         correct_output = {
             "Program": {
                 "struct": {
                     "another_struct": {
                         "another_struct": {
-                            "var": value
+                            "var": None
                         }
                     }
                 }
             }
         }
-        actual_output = self.driver._parse_name(name_dict={}, name=input, value=value)
-        self.assertEqual(actual_output, correct_output)
+        for value in self.test_different_data_types:
+            correct_output["Program"]["struct"]["another_struct"]["another_struct"]["var"] = value 
 
-        value = 30
-        correct_output["Program"]["struct"]["another_struct"]["another_struct"]["var"] = value 
-        actual_output = self.driver._parse_name(name_dict={}, name=input, value=value)
-        self.assertEqual(actual_output, correct_output)
+            actual_output = self.driver._parse_name(name_dict={}, name=input, value=value)
 
-        value = 30.151535
-        correct_output["Program"]["struct"]["another_struct"]["another_struct"]["var"] = value 
-        actual_output = self.driver._parse_name(name_dict={}, name=input, value=value)
-        self.assertEqual(actual_output, correct_output)
+            self.assertEqual(actual_output, 
+                            correct_output, 
+                            msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
 
-    def test_variable_name_parsing_simple_array(self) -> None:
+    def test_variable_name_parsing_simple_array(self):
 
         value = "30"
         array_size = 5
@@ -347,8 +437,10 @@ class TestUtils(omni.kit.test.AsyncTestCase):
         correct_output["Program"]["myArray"][array_size - 1] = value
         
         actual_output = self.driver._parse_name(name_dict={}, name=input, value=value)
-        msg = "\n" + str(correct_output) + "\n" + str(actual_output)
-        self.assertEqual(actual_output, correct_output, msg=msg)
+
+        self.assertEqual(actual_output, 
+                            correct_output, 
+                            msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
 
     def test_parse_name_with_array(self):
         correct_output = {
@@ -360,7 +452,9 @@ class TestUtils(omni.kit.test.AsyncTestCase):
                 }
             }
         }
-        actual_output = self.driver._parse_name({}, "Task:myStruct.myArray[0].myVar", "value")
-        msg = "\n" + str(correct_output) + "\n" + str(actual_output)
-        self.assertEqual(actual_output, correct_output, msg=msg)
 
+        actual_output = self.driver._parse_name({}, "Task:myStruct.myArray[0].myVar", "value")
+
+        self.assertEqual(actual_output, 
+                            correct_output, 
+                            msg=self.test_output_string.format(correct=correct_output, actual=actual_output))
