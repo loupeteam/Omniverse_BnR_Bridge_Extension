@@ -6,8 +6,11 @@
 # by not having to spin up a whole other simulated PLC
 
 import asyncio
-import websockets
 import json
+import websockets
+
+
+import websockets.server
 
 fake_plc_data = [{"LuxProg:counter": 0}]
 INITIAL_VALUE_NEW_READ_VAR = 0
