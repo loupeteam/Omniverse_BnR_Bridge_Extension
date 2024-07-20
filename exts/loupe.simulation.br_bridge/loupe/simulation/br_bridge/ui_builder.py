@@ -65,6 +65,7 @@ class UIBuilder:
         self._event_stream = omni.kit.app.get_app().get_message_bus_event_stream()
 
         self._websockets_connector = WebsocketsDriver(ip=self.get_setting('PLC_IP_ADDRESS', '127.0.0.1'), port=self.get_setting('PLC_PORT', 8000))
+        self._disconnect_command = False # command to trigger disconnect from outside async context
         
         self.write_queue = dict()
         self.write_lock = RLock()
@@ -252,6 +253,10 @@ class UIBuilder:
                     self._monitor_field.model.set_value("{}")
                 continue
 
+            if self._disconnect_command:
+                await self._websockets_connector.disconnect()
+                self._disconnect_command = False
+
             # Catch exceptions and log them to the status field
             try:
                 # Start the communication if it is not initialized
@@ -281,7 +286,6 @@ class UIBuilder:
                 except ConnectionClosed as e:
                     if self._ui_initialized:
                         self._status_field.model.set_value(f"Connection Closed: {e}")
-                        # TODO disconnect?
                         status_update_time = time.time() + STATUS_UPDATE_TIME_SECONDS
 
                 except Exception as e:
@@ -346,7 +350,7 @@ class UIBuilder:
     def _toggle_communication_enable(self, state):
         self._enable_communication = state.get_value_as_bool()
         if not self._enable_communication:
-            await self._websockets_connector.disconnect()
+            self._disconnect_command = True
             self._communication_initialized = False
 
     def save_settings(self):
