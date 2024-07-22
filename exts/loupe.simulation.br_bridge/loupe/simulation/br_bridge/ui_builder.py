@@ -61,6 +61,12 @@ class UIBuilder:
         self._enable_communication = self.get_setting( 'ENABLE_COMMUNICATION', False ) 
         self._refresh_rate = self.get_setting( 'REFRESH_RATE', 20 )
 
+        # Timing variables
+        self._actual_cyclic_read_time = 0
+        self._last_cyclic_read_time = 0
+        self._worst_latency = 0
+        self._average_latency = 0
+
         # Data stream where the extension will dump the data that it reads from the PLC.
         self._event_stream = omni.kit.app.get_app().get_message_bus_event_stream()
 
@@ -76,9 +82,6 @@ class UIBuilder:
 
         self._thread = threading.Thread(target=lambda: asyncio.run(self._update_plc_data()))
         self._thread.start()
-
-        self._actual_cyclic_read_time = 0
-        self._last_cyclic_read_time = 0
 
     ###################################################################################
     #           The Functions Below Are Called Automatically By extension.py
