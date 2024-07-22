@@ -243,11 +243,6 @@ class UIBuilder:
         with self.write_lock:
             self.write_queue[name] = value
 
-    def rolling_average(self, average, new):
-        average -= average / 10
-        average += new / 10
-        return average
-
     async def _update_plc_data(self):
 
         thread_start_time = time.time()
@@ -348,6 +343,12 @@ class UIBuilder:
         
         # Reset for next scan
         self._last_cyclic_read_time = time.time()
+
+    def rolling_average(self, average, new):
+        NUM_SAMPLES = 10
+        average -= average / NUM_SAMPLES
+        average += new / NUM_SAMPLES
+        return average
 
 
     ####################################
