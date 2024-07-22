@@ -129,8 +129,23 @@ class WebsocketsDriver():
             except Exception as e:
                 raise PLCDataParsingException(str(e)) from e
         elif response["type"] == "writeresponse":
-            pass
+            print('succesfully wrote data')
         return plc_var_dict
+
+
+    def _ensure_list_with_index_in_dict(self, list_name, _dict, _index):
+        """
+        Ensure that dictionary has a key of list_name, that it's value is a list,
+        and that the list is long enough to include the index
+        """
+
+        # Create list if not in dict
+        if list_name not in _dict or not isinstance(_dict[list_name], list):
+            _dict[list_name] = []
+
+        # Extend list if not long enough
+        if _index >= len(_dict[list_name]):
+            _dict[list_name].extend([None] * (_index - len(_dict[list_name]) + 1))
     
     def _parse_flat_plc_var_to_dict(self, plc_var_dict, plc_var, value):
         """
@@ -147,32 +162,28 @@ class WebsocketsDriver():
             plc_var (str): The variable name in flattened string form ("Program:myStruct.myVar")
             value (any): The value to write to the dictionary entry
         """
+
         name_parts = re.split('[:.]', plc_var)
 
         if len(name_parts) > 1:
-            # Multiple parts to passed-in plc_var (e.g. Program:myStruct[3].myVar has 3 parts)
+            # Multiple parts in passed-in plc_var (e.g. Program:myStruct[3].myVar has 3 parts)
             # From here we want to use recursion to assign a dictionary value (i.e. sub dictionary) to the first part.
 
             first_part_is_array = '[' in name_parts[0]
 
-            ## Ensure corresponding subdictionary exists
+            ## Get pre-existing subdictionary (or create if necessary)
             if first_part_is_array:
-                array_plc_var, index = name_parts[0].split("[")
-                index = int(index[:-1])
+                array_name, array_index = name_parts[0].split("[")
+                array_index = int(array_index[:-1])
                 
-                if array_plc_var not in plc_var_dict or not isinstance(plc_var_dict[array_plc_var], list):
-                    plc_var_dict[array_plc_var] = []
-                
-                # Extend if necessary
-                if index >= len(plc_var_dict[array_plc_var]):
-                    extend_by = index - len(plc_var_dict[array_plc_var]) + 1
-                    plc_var_dict[array_plc_var].extend([None] * extend_by)
+                # Ensure array is in dictionary and is long enough
+                self._ensure_list_with_index_in_dict(array_name, plc_var_dict, array_index)
 
                 # Ensure array index location has dict-typed value
-                if not isinstance(plc_var_dict[array_plc_var][index], dict):
-                    plc_var_dict[array_plc_var][index] = {}
+                if not isinstance(plc_var_dict[array_name][array_index], dict):
+                    plc_var_dict[array_name][array_index] = {}
                     
-                existing_sub_dict = plc_var_dict[array_plc_var][index]
+                existing_sub_dict = plc_var_dict[array_name][array_index]
             else:
                 member_plc_var = name_parts[0]
                 
@@ -188,26 +199,23 @@ class WebsocketsDriver():
                                                               sub_plc_var,
                                                               value)
             
+            # Assign result of recursive call (subdictionary) to first part
             if first_part_is_array:
-                plc_var_dict[array_plc_var][index] = sub_dict
+                plc_var_dict[array_name][array_index] = sub_dict
             else:
                 plc_var_dict[member_plc_var] = sub_dict
         else:
-            # only one part to passed in plc_var
+            # Only one part in passed-in plc_var
+            # Proceed to assign value
 
             if '[' in name_parts[0]:
-                array_plc_var, index = name_parts[0].split("[")
-                index = int(index[:-1])
+                array_name, array_index = name_parts[0].split("[")
+                array_index = int(array_index[:-1])
                 
-                if array_plc_var not in plc_var_dict or not isinstance(plc_var_dict[array_plc_var], list):
-                    plc_var_dict[array_plc_var] = []
-                
-                # Extend if necessary
-                if index >= len(plc_var_dict[array_plc_var]):
-                    extend_by = (index - len(plc_var_dict[array_plc_var]) + 1)
-                    plc_var_dict[array_plc_var].extend([None] * extend_by)
-                
-                plc_var_dict[array_plc_var][index] = value
+                # Ensure array is in dictionary and is long enough
+                self._ensure_list_with_index_in_dict(array_name, plc_var_dict, array_index)
+
+                plc_var_dict[array_name][array_index] = value
             else:
                 # Write value (regardless of whether it exists or not)
                 plc_var_dict[name_parts[0]] = value
