@@ -173,17 +173,17 @@ class WebsocketsDriver():
 
             ## Get pre-existing subdictionary (or create if necessary)
             if first_part_is_array:
-                array_plc_var, index = name_parts[0].split("[")
-                index = int(index[:-1])
+                array_name, array_index = name_parts[0].split("[")
+                array_index = int(array_index[:-1])
                 
                 # Ensure array is in dictionary and is long enough
-                self._ensure_list_with_index_in_dict(array_name, plc_var_dict, index)
+                self._ensure_list_with_index_in_dict(array_name, plc_var_dict, array_index)
 
                 # Ensure array index location has dict-typed value
-                if not isinstance(plc_var_dict[array_plc_var][index], dict):
-                    plc_var_dict[array_plc_var][index] = {}
+                if not isinstance(plc_var_dict[array_name][array_index], dict):
+                    plc_var_dict[array_name][array_index] = {}
                     
-                existing_sub_dict = plc_var_dict[array_plc_var][index]
+                existing_sub_dict = plc_var_dict[array_name][array_index]
             else:
                 member_plc_var = name_parts[0]
                 
@@ -201,7 +201,7 @@ class WebsocketsDriver():
             
             # Assign result of recursive call (subdictionary) to first part
             if first_part_is_array:
-                plc_var_dict[array_plc_var][index] = sub_dict
+                plc_var_dict[array_name][array_index] = sub_dict
             else:
                 plc_var_dict[member_plc_var] = sub_dict
         else:
@@ -209,13 +209,13 @@ class WebsocketsDriver():
             # Proceed to assign value
 
             if '[' in name_parts[0]:
-                array_name, index = name_parts[0].split("[")
-                index = int(index[:-1])
+                array_name, array_index = name_parts[0].split("[")
+                array_index = int(array_index[:-1])
                 
                 # Ensure array is in dictionary and is long enough
-                self._ensure_list_with_index_in_dict(array_name, plc_var_dict, index)
+                self._ensure_list_with_index_in_dict(array_name, plc_var_dict, array_index)
 
-                plc_var_dict[array_name][index] = value
+                plc_var_dict[array_name][array_index] = value
             else:
                 # Write value (regardless of whether it exists or not)
                 plc_var_dict[name_parts[0]] = value
