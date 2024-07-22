@@ -178,7 +178,13 @@ class UIBuilder:
 
         with ui.CollapsableFrame("Dev Tools", collapsed=True):
             with ui.VStack(spacing=5, height=0):
+                self._average_cyclic_read_time_field = ui.FloatField(ui.SimpleFloatModel(self._average_latency), multiline=False, read_only=True)
+                self._worst_cyclic_read_time_field = ui.FloatField(ui.SimpleFloatModel(self._worst_latency), multiline=False, read_only=True)
+                self._test_read_button = ui.Button(text="Reset worst-case latency", clicked_fn=self._reset_worst_latency)
                 self._actual_cyclic_read_time_field = ui.FloatField(ui.SimpleFloatModel(self._actual_cyclic_read_time), multiline=False, read_only=True)
+
+                self._separator = ui.Separator()
+
                 self._test_read_button = ui.Button(text="Add variables for test program", 
                                                    clicked_fn=self._add_variables_for_test_program)
                 self._test_read_field = ui.StringField(ui.SimpleStringModel(DEFAULT_DEV_TEST_UI_VAR), multiline=True, read_only=False)
@@ -193,8 +199,12 @@ class UIBuilder:
                 self._test_write_field_value = ui.StringField(ui.SimpleStringModel(DEFAULT_DEV_TEST_UI_WRITE_VALUE), multiline=True, read_only=False)
                 self._test_read_button = ui.Button(text="Write value",
                                                    clicked_fn=lambda: self.queue_write(name=self._test_write_field.model.as_string, value=self._test_write_field_value.model.as_string))
+                
 
         self._ui_initialized = True
+
+    def _reset_worst_latency(self):
+        self._worst_latency = 0
 
     def _add_variables_for_test_program(self):
         """
