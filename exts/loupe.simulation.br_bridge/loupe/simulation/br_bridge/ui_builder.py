@@ -223,9 +223,9 @@ class UIBuilder:
 
     def on_read_req_event(self, event ):
         event_data = event.payload
-        variables : list = event_data['variables'] 
-        for name in variables:
-            self._websockets_connector.add_read(plc_var=name)
+        variables : list = event_data['variables']
+        for var in variables:
+            self._websockets_connector.add_read(plc_var=var)
 
     def on_write_req_event(self, event ):
         variables = event.payload["variables"]
