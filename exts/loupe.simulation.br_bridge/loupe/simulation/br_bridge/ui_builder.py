@@ -259,18 +259,19 @@ class UIBuilder:
 
             thread_start_time = time.time()
 
+            if self._disconnect_command:
+                await self._websockets_connector.disconnect()
+                time.sleep(.1) # TODO is this necessary?
+                self._disconnect_command = False
+                continue
+
             # Check if the communication is enabled
             if not self._enable_communication:
                 if self._ui_initialized:
                     self._status_field.model.set_value("Disabled")
                     self._monitor_field.model.set_value("{}")
                 continue
-
-            if self._disconnect_command:
-                await self._websockets_connector.disconnect()
-                self._disconnect_command = False
-                continue
-
+ 
             # Catch exceptions and log them to the status field
             try:
                 # Start the communication if it is not initialized
