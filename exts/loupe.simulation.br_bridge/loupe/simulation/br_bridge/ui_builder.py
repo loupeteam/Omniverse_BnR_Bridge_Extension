@@ -389,6 +389,7 @@ class UIBuilder:
     def _toggle_communication_enable(self, state):
         self._enable_communication = state.get_value_as_bool()
         if not self._enable_communication:
+            # Set this variable, to be processed within the async context of the thread
             self._disconnect_command = True
             self._communication_initialized = False
 
