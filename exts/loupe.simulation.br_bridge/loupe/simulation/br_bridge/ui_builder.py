@@ -59,7 +59,7 @@ class UIBuilder:
         # Configuration parameters for the extension.
         # These are exposed on the UI. 
         self._enable_communication = self.get_setting( 'ENABLE_COMMUNICATION', False ) 
-        self._refresh_rate = self.get_setting( 'REFRESH_RATE', 20 )
+        self._refresh_rate = self.get_setting( 'REFRESH_RATE', 20 ) # in ms
 
         # Timing variables
         self._actual_cyclic_read_time = 0
@@ -352,6 +352,7 @@ class UIBuilder:
         self._last_cyclic_read_time = time.time()
 
     def rolling_average(self, average, new):
+        """Calculate a rolling average over a given number of samples."""
         NUM_SAMPLES = 10
         average -= average / NUM_SAMPLES
         average += new / NUM_SAMPLES
