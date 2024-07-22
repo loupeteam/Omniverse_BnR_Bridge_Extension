@@ -96,7 +96,7 @@ class WebsocketsDriver():
             self._connection.send(payload_json),
             self._connection.recv()
         )
-        response_json = results[1] # get results second gather call
+        response_json = results[1] # get the return from results' second function
 
         # Wait for response
         response = json.loads(response_json)
