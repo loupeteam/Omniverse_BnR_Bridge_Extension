@@ -189,7 +189,7 @@ class UIBuilder:
                                                    clicked_fn=self._add_variables_for_test_program)
                 self._test_read_field = ui.StringField(ui.SimpleStringModel(DEFAULT_DEV_TEST_UI_VAR), multiline=True, read_only=False)
                 self._test_read_button = ui.Button(text="Add Var To Cyclic Reads", 
-                                                   clicked_fn=lambda: self._websockets_connector.add_read(name=self._test_read_field.model.as_string))
+                                                   clicked_fn=lambda: self._websockets_connector.add_read(plc_var=self._test_read_field.model.as_string))
                 self._clear_read_list_button = ui.Button(text="Clear Read List", 
                                                          clicked_fn=self._websockets_connector.clear_read_list)
 
@@ -211,7 +211,7 @@ class UIBuilder:
         Add a stock set of variables, corresponding to test variables in the sample AS program, to the readlist.
         """
         for var in TEST_PROGRAM_VARS:
-            self._websockets_connector.add_read(var)
+            self._websockets_connector.add_read(plc_var=var)
 
     ####################################
     ####################################
@@ -223,7 +223,7 @@ class UIBuilder:
         event_data = event.payload
         variables : list = event_data['variables'] 
         for name in variables:
-            self._websockets_connector.add_read(name)
+            self._websockets_connector.add_read(plc_var=name)
 
     def on_write_req_event(self, event ):
         variables = event.payload["variables"]
