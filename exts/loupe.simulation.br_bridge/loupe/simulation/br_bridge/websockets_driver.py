@@ -227,7 +227,12 @@ class WebsocketsDriver():
         Disconnects from the target device.
 
         """
-        await self._connection.close()
+        print('attempting disconnect')
+        if self._connection.open:
+            print('awaiting connection close')
+            await self._connection.close()
+            print('connection close done')
+        print(self._connection.closed)
 
     def is_connected(self):
         """
