@@ -178,9 +178,12 @@ class UIBuilder:
 
         with ui.CollapsableFrame("Dev Tools", collapsed=True):
             with ui.VStack(spacing=5, height=0):
+                ui.Label("Average PLC read latency")
                 self._average_cyclic_read_time_field = ui.FloatField(ui.SimpleFloatModel(self._average_latency), multiline=False, read_only=True)
+                ui.Label("Worst PLC read latency")
                 self._worst_cyclic_read_time_field = ui.FloatField(ui.SimpleFloatModel(self._worst_latency), multiline=False, read_only=True)
                 self._test_read_button = ui.Button(text="Reset worst-case latency", clicked_fn=self._reset_worst_latency)
+                ui.Label("Last PLC read latency")
                 self._actual_cyclic_read_time_field = ui.FloatField(ui.SimpleFloatModel(self._actual_cyclic_read_time), multiline=False, read_only=True)
 
                 self._separator = ui.Separator()
