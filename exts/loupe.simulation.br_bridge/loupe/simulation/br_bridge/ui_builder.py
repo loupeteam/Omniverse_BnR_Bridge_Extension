@@ -333,6 +333,9 @@ class UIBuilder:
                 time.sleep(STATUS_UPDATE_TIME_SECONDS)
 
     def _calculate_statistics(self):
+        """
+        Calculate timing statistics for the read cycle.
+        """
         self._actual_cyclic_read_time = time.time() - self._last_cyclic_read_time
         
         self._actual_cyclic_read_time_field.model.set_value(self._actual_cyclic_read_time)
