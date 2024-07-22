@@ -320,9 +320,7 @@ class UIBuilder:
                         self._status_field.model.set_value(f"PLC read data prasing error: {e}")
                         status_update_time = time.time() + STATUS_UPDATE_TIME_SECONDS
 
-                self._actual_cyclic_read_time = time.time() - self._last_cyclic_read_time
-                self._last_cyclic_read_time = time.time()
-                self._actual_cyclic_read_time_field.model.set_value(self._actual_cyclic_read_time)
+                self._calculate_statistics()
 
                 # Push the data to the event stream
                 self._event_stream.push(event_type=EVENT_TYPE_DATA_READ, payload={'data': self._data})
@@ -337,6 +335,19 @@ class UIBuilder:
                     self._status_field.model.set_value(f"Error reading data from PLC: {e}")
                     status_update_time = time.time() + STATUS_UPDATE_TIME_SECONDS
                 time.sleep(STATUS_UPDATE_TIME_SECONDS)
+
+    def _calculate_statistics(self):
+        self._actual_cyclic_read_time = time.time() - self._last_cyclic_read_time
+        
+        self._actual_cyclic_read_time_field.model.set_value(self._actual_cyclic_read_time)
+        self._average_latency = self.rolling_average(self._average_latency, self._actual_cyclic_read_time)
+        self._average_cyclic_read_time_field.model.set_value(self._average_latency)
+        if (self._actual_cyclic_read_time > self._worst_latency):
+            self._worst_latency = self._actual_cyclic_read_time
+            self._worst_cyclic_read_time_field.model.set_value(self._worst_latency)
+        
+        # Reset for next scan
+        self._last_cyclic_read_time = time.time()
 
 
     ####################################
