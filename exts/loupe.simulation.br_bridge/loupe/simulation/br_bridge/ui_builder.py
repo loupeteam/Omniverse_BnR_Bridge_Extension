@@ -276,10 +276,10 @@ class UIBuilder:
             # Catch exceptions and log them to the status field
             try:
                 # Start the communication if it is not initialized
-                if (not self._communication_initialized) and (self._enable_communication):
-                    await self._websockets_connector.connect()
-                    self._communication_initialized = True
-                elif (self._communication_initialized) and (not self._websockets_connector.is_connected()):
+                if not self._communication_initialized and self._enable_communication:
+                    if await self._websockets_connector.connect():
+                        self._communication_initialized = True
+                elif self._communication_initialized and not self._websockets_connector.is_connected():
                     await self._websockets_connector.disconnect()
                     self._communication_initialized = False
 
