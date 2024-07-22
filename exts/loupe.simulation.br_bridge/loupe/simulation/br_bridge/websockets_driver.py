@@ -8,8 +8,8 @@
 '''
 
 import asyncio
-import websockets
 import json
+import time
 import re
 
 import websockets.client
@@ -227,12 +227,13 @@ class WebsocketsDriver():
         Disconnects from the target device.
 
         """
-        print('attempting disconnect')
         if self._connection.open:
-            print('awaiting connection close')
+            # OMJSON doesn't support the connection close opCode. This forces a close.
+            await(self._connection.send(''))
+            time.sleep(.25) # Unsure if this is necessary, giving some time for message to be procssed
             await self._connection.close()
-            print('connection close done')
-        print(self._connection.closed)
+
+
 
     def is_connected(self):
         """
