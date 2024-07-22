@@ -239,7 +239,7 @@ class UIBuilder:
 
         while self._thread_is_alive:
 
-            # Sleep for the refresh rate
+            # Sleep for the refresh rate minus time spent in last cycle
             sleepy_time = self._refresh_rate/1000 - (time.time() - thread_start_time)
             if sleepy_time > 0:
                 time.sleep(sleepy_time)
