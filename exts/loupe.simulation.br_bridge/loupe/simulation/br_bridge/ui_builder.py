@@ -256,6 +256,7 @@ class UIBuilder:
             if self._disconnect_command:
                 await self._websockets_connector.disconnect()
                 self._disconnect_command = False
+                continue
 
             # Catch exceptions and log them to the status field
             try:
