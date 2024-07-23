@@ -243,7 +243,7 @@ class UIBuilder:
         with self.write_lock:
             self.write_queue[name] = value
 
-    def _update_ui_status(self, message, reset_monitor=False, next_update_time_s=1):
+    def _update_ui_status(self, message, reset_monitor=False):
         """
         Update the status field with a message and optionally reset the monitor field.
         
@@ -252,12 +252,9 @@ class UIBuilder:
             The message to display in the status field.
         reset_monitor: bool
             If True, the monitor field will be reset to an empty dict.
-        next_update_time_s: float
-            The time in seconds until the next status update.
         """
         if self._ui_initialized:
             self._status_field.model.set_value(message)
-            self._next_status_update_time = time.time() + next_update_time_s
             if reset_monitor:
                 self._monitor_field.model.set_value("{}")
 
@@ -275,7 +272,6 @@ class UIBuilder:
         DATA_READ_FAIL_SLEEP_TIME_SECONDS = 2 # wait this long before retrying, also allows UI status to stick around
 
         thread_start_time = time.time()
-        self._next_status_update_time = time.time()
 
         while self._thread_is_alive:
 
