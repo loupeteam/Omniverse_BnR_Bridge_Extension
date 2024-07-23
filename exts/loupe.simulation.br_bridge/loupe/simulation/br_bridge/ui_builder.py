@@ -313,7 +313,7 @@ class UIBuilder:
             # Start the communication if it is and not initialized and enabled 
             if not self._communication_initialized and self._enable_communication:
                 # Attempt to connect
-                self._update_ui_status("Attempting to connect...")
+                self._update_ui_status("Connecting...")
                 try:
                     if await self._websockets_connector.connect():
                         self._communication_initialized = True
