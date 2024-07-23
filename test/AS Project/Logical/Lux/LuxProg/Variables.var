@@ -6,8 +6,6 @@
 * This file is part of OMJSON, licensed under the MIT License.
 *)
 VAR
-	string : STRING[80] := 'this is a string';
-	counter2 : DINT;
 	i : UINT;
 	jsonCache : ARRAY[0..MAI_CLIENTS] OF jsonCache_typ;
 END_VAR
@@ -17,11 +15,4 @@ VAR CONSTANT
 END_VAR
 VAR
 	oldClientInfo : ARRAY[0..JSON_MAI_CLIENTS] OF jsonWSS_client_info_typ;
-	counter : DINT;
-	bool : BOOL := FALSE;
-	lreal : LREAL := 1.23456;
-	real : REAL := 1.23456;
-	int : INT := -2359;
-	dint : DINT := -123508971;
-	structOfStructs : myStruct;
 END_VAR

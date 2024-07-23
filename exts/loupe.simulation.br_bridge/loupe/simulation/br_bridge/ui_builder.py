@@ -26,6 +26,19 @@ import json
 from websockets.exceptions import ConnectionClosed
 
 import time
+
+DEFAULT_DEV_TEST_UI_VAR = "TestProg:counter"
+DEFAULT_DEV_TEST_UI_VALUE = "0"
+DEFAULT_DEV_TEST_UI_WRITE_VAR = "TestProg:counterToggle"
+DEFAULT_DEV_TEST_UI_WRITE_VALUE = "1"
+TEST_PROGRAM_VARS = ["TestProg:counter",
+                     "TestProg:counter2", 
+                     "TestProg:bool", 
+                     "TestProg:int", 
+                     "TestProg:dint", 
+                     "TestProg:real", 
+                     "TestProg:lreal", 
+                     "TestProg:string"]
  
 class UIBuilder:
     def __init__(self):
@@ -164,30 +177,27 @@ class UIBuilder:
                 self._actual_cyclic_read_time_field = ui.FloatField(ui.SimpleFloatModel(self._actual_cyclic_read_time), multiline=False, read_only=True)
                 self._test_read_button = ui.Button(text="Add variables for test program", 
                                                    clicked_fn=self._add_variables_for_test_program)
-                self._test_read_field = ui.StringField(ui.SimpleStringModel("LuxProg:counter"), multiline=True, read_only=False) # TODO remove test var
+                self._test_read_field = ui.StringField(ui.SimpleStringModel(DEFAULT_DEV_TEST_UI_VAR), multiline=True, read_only=False)
                 self._test_read_button = ui.Button(text="Add Var To Cyclic Reads", 
                                                    clicked_fn=lambda: self._websockets_connector.add_read(name=self._test_read_field.model.as_string))
                 self._clear_read_list_button = ui.Button(text="Clear Read List", 
-                                                         clicked_fn=self._websockets_connector.clear_read_list) # TODO cleanup
+                                                         clicked_fn=self._websockets_connector.clear_read_list)
 
                 self._separator = ui.Separator()
                 
-                self._test_write_field = ui.StringField(ui.SimpleStringModel("LuxProg:counter"), multiline=True, read_only=False) # TODO remove test var
-                self._test_write_field_value = ui.StringField(ui.SimpleStringModel("1000"), multiline=True, read_only=False) # TODO remove test var
+                self._test_write_field = ui.StringField(ui.SimpleStringModel(DEFAULT_DEV_TEST_UI_WRITE_VAR), multiline=True, read_only=False)
+                self._test_write_field_value = ui.StringField(ui.SimpleStringModel(DEFAULT_DEV_TEST_UI_WRITE_VALUE), multiline=True, read_only=False)
                 self._test_read_button = ui.Button(text="Write value",
                                                    clicked_fn=lambda: self.queue_write(name=self._test_write_field.model.as_string, value=self._test_write_field_value.model.as_string))
 
         self._ui_initialized = True
 
     def _add_variables_for_test_program(self):
-        self._websockets_connector.add_read("LuxProg:counter")
-        self._websockets_connector.add_read("LuxProg:counter2")
-        self._websockets_connector.add_read("LuxProg:bool")
-        self._websockets_connector.add_read("LuxProg:int")
-        self._websockets_connector.add_read("LuxProg:dint")
-        self._websockets_connector.add_read("LuxProg:real")
-        self._websockets_connector.add_read("LuxProg:lreal")
-        self._websockets_connector.add_read("LuxProg:string")
+        """
+        Add a stock set of variables, corresponding to test variables in the sample AS program, to the readlist.
+        """
+        for var in TEST_PROGRAM_VARS:
+            self._websockets_connector.add_read(var)
 
     ####################################
     ####################################
@@ -207,6 +217,15 @@ class UIBuilder:
             self.queue_write(variable['name'], variable['value'])
 
     def queue_write(self, name, value):
+        """
+        Add PLC variable to the write queue for sending variables and values to the PLC.
+        
+        Args
+        name: str
+            The name of the variable to write to.
+        value:
+            The value to write to the variable.
+        """
         with self.write_lock:
             self.write_queue[name] = value
 
@@ -214,6 +233,8 @@ class UIBuilder:
 
         thread_start_time = time.time()
         status_update_time = time.time()
+
+        STATUS_UPDATE_TIME_SECONDS = 1
 
         while self._thread_is_alive:
 
@@ -261,15 +282,21 @@ class UIBuilder:
                     if self._ui_initialized:
                         self._status_field.model.set_value(f"Connection Closed: {e}")
                         # TODO disconnect?
-                        status_update_time = time.time() + 1
+                        status_update_time = time.time() + STATUS_UPDATE_TIME_SECONDS
 
                 except Exception as e:
                     if self._ui_initialized:
                         self._status_field.model.set_value(f"Error writing data to PLC: {e}")
-                        status_update_time = time.time() + 1
+                        status_update_time = time.time() + STATUS_UPDATE_TIME_SECONDS
 
                 # Read data from the PLC
-                self._data = await self._websockets_connector.read_data()
+                try:
+                    self._data = await self._websockets_connector.read_data()
+                except PLCDataParsingException as e:
+                    if self._ui_initialized:
+                        self._status_field.model.set_value(f"PLC read data prasing error: {e}")
+                        status_update_time = time.time() + STATUS_UPDATE_TIME_SECONDS
+
                 self._actual_cyclic_read_time = time.time() - self._last_cyclic_read_time
                 self._last_cyclic_read_time = time.time()
                 self._actual_cyclic_read_time_field.model.set_value(self._actual_cyclic_read_time)
@@ -285,8 +312,9 @@ class UIBuilder:
             except Exception as e:
                 if self._ui_initialized:
                     self._status_field.model.set_value(f"Error reading data from PLC: {e}")
-                    status_update_time = time.time() + 1
-                time.sleep(1)
+                    status_update_time = time.time() + STATUS_UPDATE_TIME_SECONDS
+                time.sleep(STATUS_UPDATE_TIME_SECONDS)
+
 
     ####################################
     ####################################
@@ -318,6 +346,7 @@ class UIBuilder:
     def _toggle_communication_enable(self, state):
         self._enable_communication = state.get_value_as_bool()
         if not self._enable_communication:
+            await self._websockets_connector.disconnect()
             self._communication_initialized = False
 
     def save_settings(self):
