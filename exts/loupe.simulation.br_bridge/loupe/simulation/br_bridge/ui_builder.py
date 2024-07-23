@@ -13,10 +13,10 @@ import omni.timeline
 
 from carb.settings import get_settings
 
-from .websockets_driver import WebsocketsDriver, PLCDataParsingException
+from .websockets_driver import WebsocketsDriver, PLCDataParsingException, WebsocketsConnectionException
 
 from .global_variables import EXTENSION_NAME
-from .br_bridge import EVENT_TYPE_DATA_READ, EVENT_TYPE_DATA_READ_REQ, EVENT_TYPE_DATA_WRITE_REQ, EVENT_TYPE_DATA_INIT
+from .BrBridge import EVENT_TYPE_DATA_READ, EVENT_TYPE_DATA_READ_REQ, EVENT_TYPE_DATA_WRITE_REQ, EVENT_TYPE_DATA_INIT
 
 import threading
 from threading import RLock
