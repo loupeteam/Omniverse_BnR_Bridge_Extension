@@ -402,10 +402,14 @@ class UIBuilder:
     def _on_plc_ip_changed(self, value):
         self._websockets_connector.ip = value.get_value_as_string()
         self._communication_initialized = False
+        if self._websockets_connector:
+            self._disconnect_command = True
 
     def _on_plc_port_changed(self, value):
         self._websockets_connector.port = value.get_value_as_int()
         self._communication_initialized = False
+        if self._websockets_connector:
+            self._disconnect_command = True
 
     def _on_refresh_rate_changed(self, value):
         self._refresh_rate = value.get_value_as_int()
@@ -434,4 +438,7 @@ class UIBuilder:
         self._plc_port_field.model.set_value(self._websockets_connector.port)
         self._enable_communication_checkbox.model.set_value(self._enable_communication)
         self._communication_initialized = False
+        if self._websockets_connector:
+            self._disconnect_command = True
+
 
