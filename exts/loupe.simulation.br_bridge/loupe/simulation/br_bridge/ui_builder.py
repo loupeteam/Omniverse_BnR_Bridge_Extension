@@ -232,13 +232,15 @@ class UIBuilder:
     ####################################
     ####################################
 
-    def on_read_req_event(self, event ):
+    def on_read_req_event(self, event):
+        """Callback for extension event stream. On read request event, add the variables to the read list."""
         event_data = event.payload
         variables : list = event_data['variables']
         for var in variables:
             self._websockets_connector.add_read(plc_var=var)
 
-    def on_write_req_event(self, event ):
+    def on_write_req_event(self, event):
+        """Callback for extension event stream. On write request event, add a variable to the write queue."""
         variables = event.payload["variables"]
         for variable in variables:
             self.queue_write(variable['name'], variable['value'])
