@@ -408,7 +408,7 @@ class UIBuilder:
         self._communication_initialized = False
 
     def _on_plc_port_changed(self, value):
-        self._websockets_connector.port = value.get_value_as_string()
+        self._websockets_connector.port = value.get_value_as_int()
         self._communication_initialized = False
 
     def _on_refresh_rate_changed(self, value):
