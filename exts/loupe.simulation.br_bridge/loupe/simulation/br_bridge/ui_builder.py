@@ -125,7 +125,7 @@ class UIBuilder:
         Perform any necessary cleanup such as removing active callback functions
         """
         self.read_req.unsubscribe()
-        self.write_req.unsubscribe()    
+        self.write_req.unsubscribe()
         self._thread_is_alive = False
         self._thread.join()
 
@@ -262,13 +262,13 @@ class UIBuilder:
 
             thread_start_time = time.time()
 
+            # Handle disconnect
             if self._disconnect_command:
                 await self._websockets_connector.disconnect()
-                time.sleep(.1) # TODO is this necessary?
                 self._disconnect_command = False
                 continue
 
-            # Check if the communication is enabled
+            # Check if the communication is disabled
             if not self._enable_communication:
                 if self._ui_initialized:
                     self._status_field.model.set_value("Disabled")
