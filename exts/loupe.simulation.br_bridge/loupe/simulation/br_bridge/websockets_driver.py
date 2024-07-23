@@ -13,10 +13,12 @@ import time
 import re
 
 import websockets.client
-
-from websockets.exceptions import ConnectionClosed
+from websockets.exceptions import ConnectionClosedError
 
 class PLCDataParsingException(Exception):
+    pass
+
+class WebsocketsConnectionException(Exception):
     pass
 
 class WebsocketsDriver():
@@ -220,19 +222,20 @@ class WebsocketsDriver():
         """
         Connects to the target device.
 
+        Returns True if connection was succesful, False otherwise.
+
         """
         try:
             self._connection = await websockets.client.connect("ws://" + self.ip + ":" + str(self.port),
                                                                open_timeout=3,
-                                                            ping_interval=None,  # OMJSON does not use ping/pong
-                                                            close_timeout=1) # Could potentially be shorter
-        except ConnectionClosed as e:
-            print("Connect error: ", e)
+                                                               ping_interval=None,  # OMJSON does not use ping/pong
+                                                               close_timeout=1) # Could potentially be shorter
+        except ConnectionClosedError as e:
+            raise WebsocketsConnectionException("Connection Closed Error: " + str(e)) from e
         except asyncio.TimeoutError as e:
-            print("Timeout error: ", e)
-        
+            raise WebsocketsConnectionException("Connecting..." + str(e)) from e
         except ConnectionRefusedError as e:
-            print("Connection refused error: ", e)
+            raise WebsocketsConnectionException("Connection Refused Error, check IP and Port: " + str(e)) from e
 
         if self._connection:
             return self._connection.open
@@ -247,7 +250,7 @@ class WebsocketsDriver():
         if self._connection and self._connection.open:
                 # OMJSON doesn't support the connection close opCode. This forces a close.
                 await(self._connection.send(''))
-                time.sleep(.25) # Unsure if this is necessary, giving some time for message to be procssed
+                time.sleep(.25) # Giving time for message to be processed by PLC
                 await self._connection.close()
 
     def is_connected(self):
