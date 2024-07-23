@@ -242,12 +242,39 @@ class UIBuilder:
         with self.write_lock:
             self.write_queue[name] = value
 
+    def _update_ui_status(self, message, reset_monitor=False, next_update_time_s=1):
+        """
+        Update the status field with a message and optionally reset the monitor field.
+        
+        Args:
+        message: str
+            The message to display in the status field.
+        reset_monitor: bool
+            If True, the monitor field will be reset to an empty dict.
+        next_update_time_s: float
+            The time in seconds until the next status update.
+        """
+        if self._ui_initialized:
+            self._status_field.model.set_value(message)
+            self._next_status_update_time = time.time() + next_update_time_s
+            if reset_monitor:
+                self._monitor_field.model.set_value("{}")
+
+    def _update_monitor_field(self):
+        # Update the monitor field
+        if self._ui_initialized:
+            json_formatted_str = json.dumps(self._data, indent=4)
+            self._monitor_field.model.set_value(json_formatted_str)
+
     async def _update_plc_data(self):
+        """
+        Main loop for connecting, auto-reconnecting, reading data, and writing data to the PLC.
+        """
+
+        DATA_READ_FAIL_SLEEP_TIME_SECONDS = 2 # wait this long before retrying, also allows UI status to stick around
 
         thread_start_time = time.time()
-        status_update_time = time.time()
-
-        STATUS_UPDATE_TIME_SECONDS = 1
+        self._next_status_update_time = time.time()
 
         while self._thread_is_alive:
 
@@ -267,9 +294,7 @@ class UIBuilder:
 
             # Check if the communication is disabled
             if not self._enable_communication:
-                if self._ui_initialized:
-                    self._status_field.model.set_value("Disabled")
-                    self._monitor_field.model.set_value("{}")
+                self._update_ui_status(message="Disabled", reset_monitor=True)
                 continue
 
             # Start the communication if it is and not initialized and enabled 
@@ -279,18 +304,20 @@ class UIBuilder:
                     self._communication_initialized = True
                     self._reset_worst_latency()
             
-            if self._websockets_connector.is_connected():
-                # Catch exceptions and log them to the status field
+                self._update_ui_status("Attempting to connect...")
                 try:
+                    if await self._websockets_connector.connect():
+                        self._communication_initialized = True
+                        self._update_ui_status("Connected")
+                        self._reset_worst_latency()
+                except WebsocketsConnectionException as e:
+                    self._update_ui_status(f"{e}")
+                    time.sleep(DATA_READ_FAIL_SLEEP_TIME_SECONDS)
+                    continue
 
-                    if status_update_time < time.time():
-                        if self._websockets_connector.is_connected():
-                            self._status_field.model.set_value("Connected")
-                        else:
-                            self._status_field.model.set_value("Attempting to connect...")
-
-                    # Write data to the PLC if there is data to write
-                    # If there is an exception, log it to the status field but continue reading data
+            # Catch exceptions and log them to the status field
+            try:
+                if self._websockets_connector.is_connected():
                     try:
                         if self.write_queue:                                             
                             with self.write_lock:
@@ -300,53 +327,49 @@ class UIBuilder:
                             await self._websockets_connector.write_data(values)
 
                     except ConnectionClosed as e:
-                        if self._ui_initialized:
-                            self._status_field.model.set_value(f"Connection Closed: {e}")
-                            status_update_time = time.time() + STATUS_UPDATE_TIME_SECONDS
+                        self._update_ui_status(f"Connection Closed: {e}")
 
                     except Exception as e:
-                        if self._ui_initialized:
-                            self._status_field.model.set_value(f"Error writing data to PLC: {e}")
-                            status_update_time = time.time() + STATUS_UPDATE_TIME_SECONDS
+                        self._update_ui_status(f"Error writing data to PLC: {e}")
 
                     # Read data from the PLC
                     try:
                         self._data = await self._websockets_connector.read_data()
                     except PLCDataParsingException as e:
-                        if self._ui_initialized:
-                            self._status_field.model.set_value(f"PLC read data prasing error: {e}")
-                            status_update_time = time.time() + STATUS_UPDATE_TIME_SECONDS
-
-                    self._calculate_statistics()
+                        self._update_ui_status(f"PLC read data prasing error: {e}")
 
                     # Push the data to the event stream
                     self._event_stream.push(event_type=EVENT_TYPE_DATA_READ, payload={'data': self._data})
 
-                    # Update the monitor field
-                    if self._ui_initialized:
-                        json_formatted_str = json.dumps(self._data, indent=4)
-                        self._monitor_field.model.set_value(json_formatted_str)
+                    self._update_monitor_field()
 
-                except ConnectionClosedError as e:
-                    if self._ui_initialized:
-                        self._status_field.model.set_value(f"Connection Closed: {e}")
-                        status_update_time = time.time() + STATUS_UPDATE_TIME_SECONDS
+                    self._calculate_statistics()
 
-                except Exception as e:
-                    if self._ui_initialized:
-                        self._status_field.model.set_value(f"Error reading data from PLC: {e}")
-                        status_update_time = time.time() + STATUS_UPDATE_TIME_SECONDS
-                    time.sleep(STATUS_UPDATE_TIME_SECONDS)
+            except ConnectionClosedError as e:
+                self._update_ui_status(f"Connection Closed: {e}")
+                self._communication_initialized = False
+
+            except Exception as e:
+                self._update_ui_status(f"Error: {e}")
+                time.sleep(DATA_READ_FAIL_SLEEP_TIME_SECONDS)
+
+    ####################################
+    ####################################
+    # Statistics
+    ####################################
+    ####################################
 
     def _calculate_statistics(self):
         """
-        Calculate timing statistics for the read cycle.
+        Calculate timing statistics for the read / write cycle.
         """
         self._actual_cyclic_read_time = time.time() - self._last_cyclic_read_time
         
         self._actual_cyclic_read_time_field.model.set_value(self._actual_cyclic_read_time)
+
         self._average_latency = self.rolling_average(self._average_latency, self._actual_cyclic_read_time)
         self._average_cyclic_read_time_field.model.set_value(self._average_latency)
+
         if (self._actual_cyclic_read_time > self._worst_latency):
             self._worst_latency = self._actual_cyclic_read_time
             self._worst_cyclic_read_time_field.model.set_value(self._worst_latency)
