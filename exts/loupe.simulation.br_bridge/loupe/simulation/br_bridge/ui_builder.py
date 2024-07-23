@@ -158,6 +158,8 @@ class UIBuilder:
                     ui.Label("PLC Port")
                     self._plc_port_field = ui.IntField(ui.SimpleIntModel(self._websockets_connector.port))
                     self._plc_port_field.model.add_value_changed_fn(self._on_plc_port_changed)
+                    self._plc_port_field.model.set_min(0)
+                    self._plc_port_field.model.set_max(65535)
 
                 with ui.HStack(spacing=5, height=0):
                     ui.Label("Settings")
