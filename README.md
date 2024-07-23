@@ -6,7 +6,7 @@ info@loupe.team
 
 # Description
 
-This is an extension that connects B&R PLCs into the Omniverse ecosystem. It leverages websockets and the [OMJSON](https://github.com/loupeteam/OMJSON) library for B&R PLCs.
+This is an extension that connects B&R PLCs into the Omniverse ecosystem. It leverages [websockets](https://github.com/python-websockets/websockets) and the [OMJSON](https://github.com/loupeteam/OMJSON) library for B&R PLCs.
 
 # Documentation
 
@@ -27,5 +27,3 @@ This software contains source code provided by NVIDIA Corporation. This code is 
 * `ui_builder.py`
 
 This software is intended for use with NVIDIA Omniverse apps, which are subject to the [NVIDIA Omniverse License Agreement](https://docs.omniverse.nvidia.com/isaacsim/latest/common/NVIDIA_Omniverse_License_Agreement.html) for use and distribution.
-
-This software also relies on #TODO, which is licensed under the #TODO license.
