@@ -14,6 +14,8 @@ import re
 
 import websockets.client
 
+from websockets.exceptions import ConnectionClosed
+
 class PLCDataParsingException(Exception):
     pass
 
