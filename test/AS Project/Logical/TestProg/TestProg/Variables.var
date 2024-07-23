@@ -1,4 +1,9 @@
+VAR CONSTANT
+	MAX_BIG_ARRAY : USINT := 100;
+	MAI_BIG_ARRAY : USINT := MAX_BIG_ARRAY-1;
+END_VAR
 VAR
+	bigLrealArray : ARRAY[0..MAI_BIG_ARRAY] OF LREAL;
 	string : STRING[80] := 'this is a string';
 	counter2 : DINT := 0;
 	counter : DINT := 0;

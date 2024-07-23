@@ -8,13 +8,17 @@
 '''
 
 import asyncio
-import websockets
 import json
+import time
 import re
 
 import websockets.client
+from websockets.exceptions import ConnectionClosedError
 
 class PLCDataParsingException(Exception):
+    pass
+
+class WebsocketsConnectionException(Exception):
     pass
 
 class WebsocketsDriver():
@@ -96,7 +100,7 @@ class WebsocketsDriver():
             self._connection.send(payload_json),
             self._connection.recv()
         )
-        response_json = results[1] # get results second gather call
+        response_json = results[1] # get the return from results' second function
 
         # Wait for response
         response = json.loads(response_json)
@@ -226,16 +230,36 @@ class WebsocketsDriver():
         """
         Connects to the target device.
 
-        """
-        self._connection = await websockets.client.connect("ws://" + self.ip + ":" + str(self.port), 
-                                                           ping_interval=None) # OMJSON does not use ping/pong
+        Returns True if connection was succesful, False otherwise.
 
+        """
+        try:
+            self._connection = await websockets.client.connect("ws://" + self.ip + ":" + str(self.port),
+                                                               open_timeout=3,
+                                                               ping_interval=None,  # OMJSON does not use ping/pong
+                                                               close_timeout=1) # Could potentially be shorter
+        except ConnectionClosedError as e:
+            raise WebsocketsConnectionException("Connection Closed Error: " + str(e)) from e
+        except asyncio.TimeoutError as e:
+            raise WebsocketsConnectionException("Connecting..." + str(e)) from e
+        except ConnectionRefusedError as e:
+            raise WebsocketsConnectionException("Connection Refused Error, check IP and Port: " + str(e)) from e
+
+        if self._connection:
+            return self._connection.open
+        else:
+            return False
+        
     async def disconnect(self):
         """
         Disconnects from the target device.
 
         """
-        await self._connection.close()
+        if self._connection and self._connection.open:
+                # OMJSON doesn't support the connection close opCode. This forces a close.
+                await(self._connection.send(''))
+                time.sleep(.25) # Giving time for message to be processed by PLC
+                await self._connection.close()
 
     def is_connected(self):
         """
@@ -245,4 +269,7 @@ class WebsocketsDriver():
             bool: True if the connection is open, False otherwise.
 
         """
-        return self._connection.open
+        if self._connection:
+            return self._connection.open
+        else:
+            return False
