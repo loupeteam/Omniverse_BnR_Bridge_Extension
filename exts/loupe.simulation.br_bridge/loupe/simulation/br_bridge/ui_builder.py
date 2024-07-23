@@ -95,7 +95,6 @@ class UIBuilder:
 
         if not self._thread_is_alive:
             self._thread_is_alive = True
-            # TODO confirm this redefinition is not needed: self._thread = threading.Thread(target=self._update_plc_data)
             self._thread.start()
 
     def on_timeline_event(self, event):
