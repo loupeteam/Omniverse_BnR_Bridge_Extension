@@ -43,7 +43,7 @@ async def mock_omjson_plc(websocket):
                         plc_var_dict[plc_var] = message_dict["data"][plc_var]
                         print(fake_plc_data)
 
-            # TODO create writeresponse
+            # Note: writeresponse is not implemented
 
 start_server = websockets.serve(mock_omjson_plc, "localhost", 8000)
 
