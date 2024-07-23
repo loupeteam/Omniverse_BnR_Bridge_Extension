@@ -219,10 +219,20 @@ class WebsocketsDriver():
         Connects to the target device.
 
         """
-        self._connection = await websockets.client.connect("ws://" + self.ip + ":" + str(self.port),
-                                                           ping_interval=None,  # OMJSON does not use ping/pong
-                                                           close_timeout=1) # Could potentially be shorter
-        return self._connection.open
+        try:
+            self._connection = await websockets.client.connect("ws://" + self.ip + ":" + str(self.port),
+                                                               open_timeout=3,
+                                                            ping_interval=None,  # OMJSON does not use ping/pong
+                                                            close_timeout=1) # Could potentially be shorter
+        except ConnectionClosed as e:
+            print("Connect error: ", e)
+        except asyncio.TimeoutError as e:
+            print("Timeout error: ", e)
+
+        if self._connection:
+            return self._connection.open
+        else:
+            return False
         
     async def disconnect(self):
         """
