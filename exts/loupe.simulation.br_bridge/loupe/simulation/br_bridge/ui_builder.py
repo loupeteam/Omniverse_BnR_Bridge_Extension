@@ -23,7 +23,7 @@ from threading import RLock
 
 import asyncio
 import json
-from websockets.exceptions import ConnectionClosed
+from websockets.exceptions import ConnectionClosed, ConnectionClosedError
 
 import time
 
@@ -274,66 +274,72 @@ class UIBuilder:
                     self._status_field.model.set_value("Disabled")
                     self._monitor_field.model.set_value("{}")
                 continue
- 
-            # Catch exceptions and log them to the status field
-            try:
-                # Start the communication if it is not initialized
-                if not self._communication_initialized and self._enable_communication:
-                    if await self._websockets_connector.connect():
-                        self._communication_initialized = True
-                elif self._communication_initialized and not self._websockets_connector.is_connected():
-                    await self._websockets_connector.disconnect()
-                    self._communication_initialized = False
 
-                if status_update_time < time.time():
-                    if self._websockets_connector.is_connected():
-                        self._status_field.model.set_value("Connected")
-                    else:
-                        self._status_field.model.set_value("Attempting to connect...")
-
-                # Write data to the PLC if there is data to write
-                # If there is an exception, log it to the status field but continue reading data
+            # Start the communication if it is and not initialized and enabled 
+            if not self._communication_initialized and self._enable_communication:
+                # Attempt to connect
+                if await self._websockets_connector.connect():
+                    self._communication_initialized = True
+                    self._reset_worst_latency()
+            
+            if self._websockets_connector.is_connected():
+                # Catch exceptions and log them to the status field
                 try:
-                    if self.write_queue:                                             
-                        with self.write_lock:
-                            # TODO would it be better if this was a deepcopy?
-                            values = self.write_queue
-                            self.write_queue = dict()
-                        await self._websockets_connector.write_data(values)
 
-                except ConnectionClosed as e:
+                    if status_update_time < time.time():
+                        if self._websockets_connector.is_connected():
+                            self._status_field.model.set_value("Connected")
+                        else:
+                            self._status_field.model.set_value("Attempting to connect...")
+
+                    # Write data to the PLC if there is data to write
+                    # If there is an exception, log it to the status field but continue reading data
+                    try:
+                        if self.write_queue:                                             
+                            with self.write_lock:
+                                # TODO would it be better if this was a deepcopy?
+                                values = self.write_queue
+                                self.write_queue = {}
+                            await self._websockets_connector.write_data(values)
+
+                    except ConnectionClosed as e:
+                        if self._ui_initialized:
+                            self._status_field.model.set_value(f"Connection Closed: {e}")
+                            status_update_time = time.time() + STATUS_UPDATE_TIME_SECONDS
+
+                    except Exception as e:
+                        if self._ui_initialized:
+                            self._status_field.model.set_value(f"Error writing data to PLC: {e}")
+                            status_update_time = time.time() + STATUS_UPDATE_TIME_SECONDS
+
+                    # Read data from the PLC
+                    try:
+                        self._data = await self._websockets_connector.read_data()
+                    except PLCDataParsingException as e:
+                        if self._ui_initialized:
+                            self._status_field.model.set_value(f"PLC read data prasing error: {e}")
+                            status_update_time = time.time() + STATUS_UPDATE_TIME_SECONDS
+
+                    self._calculate_statistics()
+
+                    # Push the data to the event stream
+                    self._event_stream.push(event_type=EVENT_TYPE_DATA_READ, payload={'data': self._data})
+
+                    # Update the monitor field
+                    if self._ui_initialized:
+                        json_formatted_str = json.dumps(self._data, indent=4)
+                        self._monitor_field.model.set_value(json_formatted_str)
+
+                except ConnectionClosedError as e:
                     if self._ui_initialized:
                         self._status_field.model.set_value(f"Connection Closed: {e}")
                         status_update_time = time.time() + STATUS_UPDATE_TIME_SECONDS
 
                 except Exception as e:
                     if self._ui_initialized:
-                        self._status_field.model.set_value(f"Error writing data to PLC: {e}")
+                        self._status_field.model.set_value(f"Error reading data from PLC: {e}")
                         status_update_time = time.time() + STATUS_UPDATE_TIME_SECONDS
-
-                # Read data from the PLC
-                try:
-                    self._data = await self._websockets_connector.read_data()
-                except PLCDataParsingException as e:
-                    if self._ui_initialized:
-                        self._status_field.model.set_value(f"PLC read data prasing error: {e}")
-                        status_update_time = time.time() + STATUS_UPDATE_TIME_SECONDS
-
-                self._calculate_statistics()
-
-                # Push the data to the event stream
-                self._event_stream.push(event_type=EVENT_TYPE_DATA_READ, payload={'data': self._data})
-
-                # Update the monitor field
-                if self._ui_initialized:
-                    json_formatted_str = json.dumps(self._data, indent=4)
-                    self._monitor_field.model.set_value(json_formatted_str)
-
-            except Exception as e:
-                if self._ui_initialized:
-                    self._status_field.model.set_value(f"Error reading data from PLC: {e}")
-                    status_update_time = time.time() + STATUS_UPDATE_TIME_SECONDS
-                time.sleep(STATUS_UPDATE_TIME_SECONDS)
+                    time.sleep(STATUS_UPDATE_TIME_SECONDS)
 
     def _calculate_statistics(self):
         """
