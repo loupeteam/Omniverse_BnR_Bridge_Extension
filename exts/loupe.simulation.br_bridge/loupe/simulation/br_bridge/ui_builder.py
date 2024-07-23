@@ -27,10 +27,12 @@ from websockets.exceptions import ConnectionClosed, ConnectionClosedError
 
 import time
 
+# Defaults / test variables for "Dev Tools" section of the UI
 DEFAULT_DEV_TEST_UI_VAR = "TestProg:counter"
 DEFAULT_DEV_TEST_UI_VALUE = "0"
 DEFAULT_DEV_TEST_UI_WRITE_VAR = "TestProg:counterToggle"
 DEFAULT_DEV_TEST_UI_WRITE_VALUE = "1"
+# These are test variables in the sample AS program included with this repo
 TEST_PROGRAM_VARS = ["TestProg:counter",
                      "TestProg:counter2", 
                      "TestProg:bool", 
@@ -180,18 +182,27 @@ class UIBuilder:
         with ui.CollapsableFrame("Dev Tools", collapsed=True):
             with ui.VStack(spacing=5, height=0):
                 ui.Label("Average PLC read latency")
-                self._average_cyclic_read_time_field = ui.FloatField(ui.SimpleFloatModel(self._average_latency), multiline=False, read_only=True)
+                self._average_cyclic_read_time_field = ui.FloatField(ui.SimpleFloatModel(self._average_latency), 
+                                                                     multiline=False,
+                                                                     read_only=True)
                 ui.Label("Worst PLC read latency")
-                self._worst_cyclic_read_time_field = ui.FloatField(ui.SimpleFloatModel(self._worst_latency), multiline=False, read_only=True)
-                self._test_read_button = ui.Button(text="Reset worst-case latency", clicked_fn=self._reset_worst_latency)
+                self._worst_cyclic_read_time_field = ui.FloatField(ui.SimpleFloatModel(self._worst_latency), 
+                                                                   multiline=False,
+                                                                   read_only=True)
+                self._test_read_button = ui.Button(text="Reset worst-case latency", 
+                                                   clicked_fn=self._reset_worst_latency)
                 ui.Label("Last PLC read latency")
-                self._actual_cyclic_read_time_field = ui.FloatField(ui.SimpleFloatModel(self._actual_cyclic_read_time), multiline=False, read_only=True)
+                self._actual_cyclic_read_time_field = ui.FloatField(ui.SimpleFloatModel(self._actual_cyclic_read_time), 
+                                                                    multiline=False, 
+                                                                    read_only=True)
 
                 self._separator = ui.Separator()
 
                 self._test_read_button = ui.Button(text="Add variables for test program", 
                                                    clicked_fn=self._add_variables_for_test_program)
-                self._test_read_field = ui.StringField(ui.SimpleStringModel(DEFAULT_DEV_TEST_UI_VAR), multiline=True, read_only=False)
+                self._test_read_field = ui.StringField(ui.SimpleStringModel(DEFAULT_DEV_TEST_UI_VAR), 
+                                                       multiline=True,
+                                                       read_only=False)
                 self._test_read_button = ui.Button(text="Add Var To Cyclic Reads", 
                                                    clicked_fn=lambda: self._websockets_connector.add_read(plc_var=self._test_read_field.model.as_string))
                 self._clear_read_list_button = ui.Button(text="Clear Read List", 
@@ -199,7 +210,9 @@ class UIBuilder:
 
                 self._separator = ui.Separator()
                 
-                self._test_write_field = ui.StringField(ui.SimpleStringModel(DEFAULT_DEV_TEST_UI_WRITE_VAR), multiline=True, read_only=False)
+                self._test_write_field = ui.StringField(ui.SimpleStringModel(DEFAULT_DEV_TEST_UI_WRITE_VAR), 
+                                                        multiline=True, 
+                                                        read_only=False)
                 self._test_write_field_value = ui.StringField(ui.SimpleStringModel(DEFAULT_DEV_TEST_UI_WRITE_VALUE), multiline=True, read_only=False)
                 self._test_read_button = ui.Button(text="Write value",
                                                    clicked_fn=lambda: self.queue_write(name=self._test_write_field.model.as_string, value=self._test_write_field_value.model.as_string))
@@ -259,7 +272,7 @@ class UIBuilder:
                 self._monitor_field.model.set_value("{}")
 
     def _update_monitor_field(self):
-        # Update the monitor field
+        """Update the variable-monitoring field in the UI."""
         if self._ui_initialized:
             json_formatted_str = json.dumps(self._data, indent=4)
             self._monitor_field.model.set_value(json_formatted_str)
@@ -414,7 +427,6 @@ class UIBuilder:
     def _toggle_communication_enable(self, state):
         self._enable_communication = state.get_value_as_bool()
         if not self._enable_communication:
-            # Set this variable, to be processed within the async context of the thread
             self._disconnect_command = True
             self._communication_initialized = False
 
