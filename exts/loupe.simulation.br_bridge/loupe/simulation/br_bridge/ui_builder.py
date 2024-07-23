@@ -205,9 +205,6 @@ class UIBuilder:
                 
         self._ui_initialized = True
 
-    def _reset_worst_latency(self):
-        self._worst_latency = 0
-
     def _add_variables_for_test_program(self):
         """
         Add a stock set of variables, corresponding to test variables in the sample AS program, to the readlist.
@@ -363,7 +360,9 @@ class UIBuilder:
         average -= average / NUM_SAMPLES
         average += new / NUM_SAMPLES
         return average
-
+    
+    def _reset_worst_latency(self):
+        self._worst_latency = 0
 
     ####################################
     ####################################
