@@ -12,6 +12,10 @@ This is an extension that connects B&R PLCs into the Omniverse ecosystem. It lev
 
 Detailed documentation can be found in the extension readme file [here](exts/loupe.simulation.br_bridge/docs/README.md).
 
+# Testing
+
+To run this extension's unit tests, open Omniverse's Extensions Manager, go to the Tests tab, and click "Run Extension Tests." Enabling UI Mode makes it easier to perform individual tests.
+
 # Licensing
 
 This software contains source code provided by NVIDIA Corporation. This code is subject to the terms of the [NVIDIA Omniverse License Agreement](https://docs.omniverse.nvidia.com/isaacsim/latest/common/NVIDIA_Omniverse_License_Agreement.html). Files are licensed as follows:
