@@ -318,6 +318,7 @@ class UIBuilder:
                     if await self._websockets_connector.connect():
                         self._communication_initialized = True
                         self._update_ui_status("Connected")
+                        self._last_cyclic_read_time = time.time()
                         self._reset_worst_latency()
                 except WebsocketsConnectionException as e:
                     self._update_ui_status(f"{e}")
