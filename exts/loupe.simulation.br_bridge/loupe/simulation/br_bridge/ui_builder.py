@@ -93,7 +93,7 @@ class UIBuilder:
         """
         self._event_stream.push(event_type=EVENT_TYPE_DATA_INIT, payload={'data': {}})
 
-        if(not self._thread_is_alive):
+        if not self._thread_is_alive:
             self._thread_is_alive = True
             # TODO confirm this redefinition is not needed: self._thread = threading.Thread(target=self._update_plc_data)
             self._thread.start()
