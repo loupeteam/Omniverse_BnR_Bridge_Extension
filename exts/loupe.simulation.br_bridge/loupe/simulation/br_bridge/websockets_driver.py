@@ -229,11 +229,11 @@ class WebsocketsDriver():
         Disconnects from the target device.
 
         """
-        if self._connection.open:
-            # OMJSON doesn't support the connection close opCode. This forces a close.
-            await(self._connection.send(''))
-            time.sleep(.25) # Unsure if this is necessary, giving some time for message to be procssed
-            await self._connection.close()
+        if self._connection and self._connection.open:
+                # OMJSON doesn't support the connection close opCode. This forces a close.
+                await(self._connection.send(''))
+                time.sleep(.25) # Unsure if this is necessary, giving some time for message to be procssed
+                await self._connection.close()
 
     def is_connected(self):
         """
@@ -243,4 +243,7 @@ class WebsocketsDriver():
             bool: True if the connection is open, False otherwise.
 
         """
-        return self._connection.open
+        if self._connection:
+            return self._connection.open
+        else:
+            return False
