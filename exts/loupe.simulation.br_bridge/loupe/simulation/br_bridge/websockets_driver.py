@@ -230,6 +230,9 @@ class WebsocketsDriver():
             print("Connect error: ", e)
         except asyncio.TimeoutError as e:
             print("Timeout error: ", e)
+        
+        except ConnectionRefusedError as e:
+            print("Connection refused error: ", e)
 
         if self._connection:
             return self._connection.open
