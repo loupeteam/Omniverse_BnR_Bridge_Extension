@@ -125,6 +125,7 @@ class UIBuilder:
         Called when the stage is closed or the extension is hot reloaded.
         Perform any necessary cleanup such as removing active callback functions
         """
+        self._disconnect_command = True
         self.read_req.unsubscribe()
         self.write_req.unsubscribe()
         self._thread_is_alive = False
