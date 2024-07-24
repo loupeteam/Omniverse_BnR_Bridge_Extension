@@ -82,7 +82,7 @@ class UIBuilder:
         self.write_req = self._event_stream.create_subscription_to_push_by_type(EVENT_TYPE_DATA_WRITE_REQ, self.on_write_req_event)
         self._event_stream.push(event_type=EVENT_TYPE_DATA_INIT, payload={'data': {}})
 
-        self._thread = threading.Thread(target=lambda: asyncio.run(self._update_plc_data()))
+        self._thread = threading.Thread(target=self._thread_target)
         self._thread.start()
 
     ###################################################################################
@@ -125,6 +125,15 @@ class UIBuilder:
         Called when the stage is closed or the extension is hot reloaded.
         Perform any necessary cleanup such as removing active callback functions
         """
+        # Disconnect websockets. Try to disconnect nicely before forcing.
+        if self._websockets_connector and self._thread_is_alive:
+            self._disconnect_command = True
+            start_time = time.time()
+            timeout_s = 2 # seconds
+            while self._websockets_connector.is_connected():
+                time.sleep(.1)
+                if time.time() - start_time > timeout_s:
+                    break
         self.read_req.unsubscribe()
         self.write_req.unsubscribe()
         self._thread_is_alive = False
@@ -232,13 +241,15 @@ class UIBuilder:
     ####################################
     ####################################
 
-    def on_read_req_event(self, event ):
+    def on_read_req_event(self, event):
+        """Callback for extension event stream. On read request event, add the variables to the read list."""
         event_data = event.payload
         variables : list = event_data['variables']
         for var in variables:
             self._websockets_connector.add_read(plc_var=var)
 
-    def on_write_req_event(self, event ):
+    def on_write_req_event(self, event):
+        """Callback for extension event stream. On write request event, add a variable to the write queue."""
         variables = event.payload["variables"]
         for variable in variables:
             self.queue_write(variable['name'], variable['value'])
@@ -277,6 +288,10 @@ class UIBuilder:
             json_formatted_str = json.dumps(self._data, indent=4)
             self._monitor_field.model.set_value(json_formatted_str)
 
+    def _thread_target(self):
+        """Entry point for the worker thread."""
+        asyncio.run(self._update_plc_data())
+
     async def _update_plc_data(self):
         """
         Main loop for connecting, auto-reconnecting, reading data, and writing data to the PLC.
@@ -310,11 +325,12 @@ class UIBuilder:
             # Start the communication if it is and not initialized and enabled 
             if not self._communication_initialized and self._enable_communication:
                 # Attempt to connect
-                self._update_ui_status("Attempting to connect...")
+                self._update_ui_status("Connecting...")
                 try:
                     if await self._websockets_connector.connect():
                         self._communication_initialized = True
                         self._update_ui_status("Connected")
+                        self._last_cyclic_read_time = time.time()
                         self._reset_worst_latency()
                 except WebsocketsConnectionException as e:
                     self._update_ui_status(f"{e}")
