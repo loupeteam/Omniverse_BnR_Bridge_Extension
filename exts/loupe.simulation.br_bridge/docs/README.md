@@ -53,7 +53,7 @@ Once variable reads are occurring, the `Monitor` pane will show a JSON string wi
 The variables on the PLC that should be read or written are specified in a custom user extension or app that uses the API available from the `loupe.simulation.br_bridge` module.
 
 ```python
-from loupe.simulation.br_bridge import BRBridge
+from loupe.simulation.br_bridge import BrBridge
       
 # Instantiate the bridge
 br_bridge = BRBridge.Manager()
