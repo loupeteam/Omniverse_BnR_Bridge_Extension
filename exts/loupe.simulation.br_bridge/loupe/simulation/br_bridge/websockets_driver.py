@@ -244,7 +244,8 @@ class WebsocketsDriver():
             raise WebsocketsConnectionException("Connecting..." + str(e)) from e
         except ConnectionRefusedError as e:
             raise WebsocketsConnectionException("Connection Refused Error, check IP and Port: " + str(e)) from e
-
+        except Exception as e:
+            raise WebsocketsConnectionException("Connection Error: " + str(e)) from e
         if self._connection:
             return self._connection.open
         else:
@@ -256,10 +257,13 @@ class WebsocketsDriver():
 
         """
         if self._connection and self._connection.open:
-                # OMJSON doesn't support the connection close opCode. This forces a close.
-                await(self._connection.send(''))
-                time.sleep(.25) # Giving time for message to be processed by PLC
-                await self._connection.close()
+                try:
+                    # OMJSON doesn't support the connection close opCode. This forces a close.
+                    await(self._connection.send(''))
+                    time.sleep(.25) # Giving time for message to be processed by PLC
+                    await self._connection.close()
+                except ConnectionClosedError as e:
+                    raise WebsocketsConnectionException("Connection Closed Error: " + str(e)) from e
 
     def is_connected(self):
         """
