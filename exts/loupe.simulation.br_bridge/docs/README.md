@@ -34,10 +34,15 @@ Once the extension is enabled, the B&R Bridge will attempt to connect to the PLC
 
 The status of the extension can be viewed in the `Status` field. Here are the possible messages and their meaning:
 - `Disabled`: the enable checkbox is unchecked, and no communication is attempted. 
-- `Attempting to connect...`: the client is trying to connect to the PLC. Staying in this state for more than a few seconds indicates that there is a problem with the connection. 
+- `Connecting...`: the client is trying to connect to the PLC. It will automatically retry until it connects.
 - `Connected`: the client has successfully established a connection with the PLC. 
-- `Error writing data to the PLC: [...]`: an error occurred while performing a variable write. 
-- `Error reading data from the PLC: [...]`: an error occurred while performing a variable read.
+Errors:
+- `Connection Refused Error, check IP and Port`: most likely the IP and Port settings are incorrect, or the PLC is offline.
+- `Connection Closed Error`: the connection was closed.
+- `Connection Error`: a different error has occured, detailed text will proceed this message.
+- `PLC read data parsing error`: the data from the PLC does not follow the expected format.
+- `Error writing data to PLC`: a different error has occured, detailed text will proceed this message.
+
 
 ### Monitoring Variable Values
 
