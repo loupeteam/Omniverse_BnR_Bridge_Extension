@@ -82,7 +82,7 @@ class UIBuilder:
         self.write_req = self._event_stream.create_subscription_to_push_by_type(EVENT_TYPE_DATA_WRITE_REQ, self.on_write_req_event)
         self._event_stream.push(event_type=EVENT_TYPE_DATA_INIT, payload={'data': {}})
 
-        self._thread = threading.Thread(target=lambda: asyncio.run(self._update_plc_data()))
+        self._thread = threading.Thread(target=self._thread_target)
         self._thread.start()
 
     ###################################################################################
@@ -287,6 +287,10 @@ class UIBuilder:
         if self._ui_initialized:
             json_formatted_str = json.dumps(self._data, indent=4)
             self._monitor_field.model.set_value(json_formatted_str)
+
+    def _thread_target(self):
+        """Entry point for the worker thread."""
+        asyncio.run(self._update_plc_data())
 
     async def _update_plc_data(self):
         """
