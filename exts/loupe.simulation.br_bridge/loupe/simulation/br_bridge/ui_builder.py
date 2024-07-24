@@ -125,7 +125,15 @@ class UIBuilder:
         Called when the stage is closed or the extension is hot reloaded.
         Perform any necessary cleanup such as removing active callback functions
         """
-        self._disconnect_command = True
+        # Disconnect websockets. Try to disconnect nicely before forcing.
+        if self._websockets_connector and self._thread_is_alive:
+            self._disconnect_command = True
+            start_time = time.time()
+            timeout_s = 2 # seconds
+            while self._websockets_connector.is_connected():
+                time.sleep(.1)
+                if time.time() - start_time > timeout_s:
+                    break
         self.read_req.unsubscribe()
         self.write_req.unsubscribe()
         self._thread_is_alive = False
