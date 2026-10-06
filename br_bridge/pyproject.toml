@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "br-bridge"
+version = "0.1.0.dev0"
+description = "B&R PLC driver over OMJSON websockets, with no Omniverse dependency"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Loupe", email = "info@loupe.team" }]
+requires-python = ">=3.10"
+dependencies = ["websockets>=12", "plc-bridge"]
+keywords = ["B&R", "OMJSON", "PLC", "Automation Runtime"]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.urls]
+Repository = "https://github.com/loupeteam/Omniverse_BnR_Bridge_Extension"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
