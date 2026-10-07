@@ -1,0 +1,3 @@
+[submodule "exts/loupe.simulation.br_bridge/loupe/simulation/common"]
+	path = exts/loupe.simulation.br_bridge/loupe/simulation/common
+	url = https://github.com/loupeteam/Omni-Utils.git

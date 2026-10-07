@@ -1,22 +1,104 @@
-'''
+"""
   File: **BrBridge.py**
   Copyright (c) 2024 Loupe
   https://loupe.team
-  
+
   This file is part of Omniverse_BnR_Bridge_Extension, licensed under the MIT License.
-  
-'''
+
+"""
 
 from typing import Callable
+import logging
 import carb.events
+import carb.settings
 import omni.kit.app
+from ..common.RuntimeBase import get_stream_name
+from ..common.BridgeManager import BridgeManager, Manager_Events as ManEvents
+from .global_variables import (
+    EXTENSION_NAME,
+    ATTR_BR_BRIDGE_HOST,
+    ATTR_BR_BRIDGE_PORT,
+    ATTR_BR_BRIDGE_ENABLE,
+    ATTR_BR_BRIDGE_REFRESH,
+)
 
-EVENT_TYPE_DATA_INIT = carb.events.type_from_string("loupe.simulation.br_bridge.DATA_INIT")
-EVENT_TYPE_DATA_READ = carb.events.type_from_string("loupe.simulation.br_bridge.DATA_READ")
-EVENT_TYPE_DATA_READ_REQ = carb.events.type_from_string("loupe.simulation.br_bridge.DATA_READ_REQ")
-EVENT_TYPE_DATA_WRITE_REQ = carb.events.type_from_string("loupe.simulation.br_bridge.DATA_WRITE_REQ")
+br_bridge_name = "br_bridge"
+Manager_Events = ManEvents(br_bridge_name)
 
-class Manager:
+EVENT_TYPE_DATA_INIT = Manager_Events.EVENT_TYPE_DATA_INIT
+EVENT_TYPE_DATA_READ = Manager_Events.EVENT_TYPE_DATA_READ
+EVENT_TYPE_DATA_READ_REQ = Manager_Events.EVENT_TYPE_DATA_READ_REQ
+EVENT_TYPE_DATA_WRITE_REQ = Manager_Events.EVENT_TYPE_DATA_WRITE_REQ
+EVENT_TYPE_CONNECTION = Manager_Events.EVENT_TYPE_CONNECTION
+EVENT_TYPE_STATUS = Manager_Events.EVENT_TYPE_STATUS
+EVENT_TYPE_ENABLE = Manager_Events.EVENT_TYPE_ENABLE
+
+manager = None
+logger = logging.getLogger(__name__)
+
+# The PLC a 0.1.0 script gets when it calls Manager() with no name.
+LEGACY_PLC_NAME = "PLC1"
+
+# Where 0.1.0 stored its single connection (ui_builder.save_settings). Read once,
+# only to seed the legacy PLC; nothing is written back there.
+_LEGACY_SETTINGS = {
+    "PLC_IP_ADDRESS": ATTR_BR_BRIDGE_HOST,
+    "PLC_PORT": ATTR_BR_BRIDGE_PORT,
+    "REFRESH_RATE": ATTR_BR_BRIDGE_REFRESH,
+    "ENABLE_COMMUNICATION": ATTR_BR_BRIDGE_ENABLE,
+}
+
+
+def _legacy_options() -> dict:
+    """
+    The 0.1.0 persistent settings translated to component options.
+    Only keys that were actually saved are returned, so the defaults apply otherwise.
+    """
+    settings = carb.settings.get_settings()
+    options = {}
+    for old_key, attr in _LEGACY_SETTINGS.items():
+        value = settings.get("/persistent/" + EXTENSION_NAME + "/" + old_key)
+        if value is not None:
+            options[attr] = value
+    return options
+
+
+def _ensure_legacy_plc(system) -> bool:
+    """
+    DEPRECATED compatibility for 0.1.0 scripts, scheduled for removal in 0.4.0.
+
+    Create the PLC1 runtime in memory when no PLC of that name is loaded, seeded
+    from the 0.1.0 persistent settings. Nothing is authored into the user's file:
+    the prim is not written and the mirror lives in the session layer, so the
+    runtime is gone when the stage closes (and after the UI's Refresh) until the
+    next Manager() call. Add a /PLC/PLC1 prim to make it permanent.
+    """
+    if system.get_component(LEGACY_PLC_NAME) is not None:
+        return False
+    options = _legacy_options()
+    system.add_component(LEGACY_PLC_NAME, options, author_prim=False)
+    logger.warning(
+        "BrBridge.Manager() was called without a PLC name and no '%s%s' prim "
+        "is loaded, so a '%s' runtime was created from the 0.1.0 persistent settings "
+        "(%s). This compatibility path is DEPRECATED and will be removed in 0.4.0: "
+        "add a '%s%s' prim to the stage and call Manager('%s') instead.",
+        system.system_root, LEGACY_PLC_NAME, LEGACY_PLC_NAME,
+        options or "defaults", system.system_root, LEGACY_PLC_NAME, LEGACY_PLC_NAME,
+    )
+    return True
+
+
+def get_system():
+    global manager
+    return manager
+
+
+def _set_system(m):
+    global manager
+    manager = m
+
+
+class Manager(BridgeManager):
     """
     Manager class provides an interface for interacting with the B&R Bridge Extension.
     It can be used in Python scripts to read and write variables.
@@ -24,20 +106,46 @@ class Manager:
     Methods:
 
         register_init_callback( callback : Callable[[carb.events.IEvent], None] ): Registers a callback function for the DATA_INIT event.
-    
+
         register_data_callback( callback : Callable[[carb.events.IEvent], None] ): Registers a callback function for the DATA_READ event.
-        
+
         add_cyclic_read_variables( variable_name_array : list[str]): Adds variables to the cyclic read list.
-        
+
         write_variable( name : str, value : any ): Writes a variable value to the B&R Bridge.
     """
 
-    def __init__(self):
+    def __init__(self, Name=None):
         """
-        Initializes the Manager object.
+        Initializes the Manager object for the PLC at /PLC/<Name>.
+
+        Args:
+            Name (str): The name of the PLC prim under /PLC/.
+
+        Calling with no name is the 0.1.0 form and is DEPRECATED (removal planned
+        for 0.4.0): it addresses "PLC1" and, if no such PLC is loaded, creates one in
+        memory from the 0.1.0 persistent settings so old scripts keep working.
         """
+        legacy = Name is None
+        if legacy:
+            Name = LEGACY_PLC_NAME
+        self._plc_name = Name
         self._event_stream = omni.kit.app.get_app().get_message_bus_event_stream()
         self._callbacks = []
+
+        system = get_system()
+        if system is None:
+            return
+        if legacy:
+            _ensure_legacy_plc(system)
+        elif system.get_component(Name) is None:
+            # An explicit name that does not exist is a typo or a load-order problem;
+            # inventing a PLC would only hide it.
+            logger.warning(
+                "BrBridge.Manager('%s'): no PLC prim '%s%s' is loaded, so no "
+                "data will arrive until one exists. Since 0.3.0 a PLC is configured "
+                "as a prim under /PLC/ (see the README), not in persistent settings.",
+                Name, system.system_root, Name,
+            )
 
     def __del__(self):
         """
@@ -46,11 +154,11 @@ class Manager:
         for callback in self._callbacks:
             self._event_stream.remove_subscription(callback)
 
-    def register_init_callback( self, callback : Callable[[carb.events.IEvent], None] ):
+    def register_init_callback(self, callback: Callable[[carb.events.IEvent], None]):
         """
         Registers a callback function for the DATA_INIT event.
-        The callback is triggered when the B&R Bridge is initialized. 
-        The user should use this event to add cyclic read variables. 
+        The callback is triggered when the B&R Bridge is initialized.
+        The user should use this event to add cyclic read variables.
         This event may get called multiple times in normal operation due to the nature of how extensions are loaded.
 
         Args:
@@ -59,10 +167,14 @@ class Manager:
         Returns:
             None
         """
-        self._callbacks.append(self._event_stream.create_subscription_to_push_by_type(EVENT_TYPE_DATA_INIT, callback))
+        self._callbacks.append(
+            self._event_stream.create_subscription_to_push_by_type(
+                get_stream_name(EVENT_TYPE_DATA_INIT, self._plc_name), callback
+            )
+        )
         callback(None)
 
-    def register_data_callback( self, callback : Callable[[carb.events.IEvent], None] ):
+    def register_data_callback(self, callback: Callable[[carb.events.IEvent], None]):
         """
         Registers a callback function for the DATA_READ event.
         The callback is triggered when the B&R Bridge receives new data. The payload contains the updated variables.
@@ -77,31 +189,61 @@ class Manager:
         Returns:
             None
         """
-        self._callbacks.append(self._event_stream.create_subscription_to_push_by_type(EVENT_TYPE_DATA_READ, callback))
+        self._callbacks.append(
+            self._event_stream.create_subscription_to_push_by_type(
+                get_stream_name(EVENT_TYPE_DATA_READ, self._plc_name), callback
+            )
+        )
 
-    def add_cyclic_read_variables(self, variable_name_array : list[str]):
+    def add_cyclic_read_variables(self, variable_name_array: list[str]):
         """
         Adds variables to the cyclic read list.
         Variables in the cyclic read list are read from the B&R Bridge at a fixed interval.
 
         Args:
-            variableList (list): List of variables to be added. ["MAIN.myStruct.myvar1", "MAIN.var2", ...]
+            variableList (list): List of variables to be added. ["MAIN:myStruct.myvar1", "MAIN:var2", ...]
 
         Returns:
             None
         """
-        self._event_stream.push(event_type=EVENT_TYPE_DATA_READ_REQ, payload={'variables': variable_name_array})
+        self._event_stream.push(
+            event_type=get_stream_name(EVENT_TYPE_DATA_READ_REQ, self._plc_name),
+            payload={"variables": variable_name_array},
+        )
 
-    def write_variable(self, name : str, value : any ):
+    def write_variable(self, name: str, value: any):
         """
         Writes a variable value to the B&R Bridge.
 
         Args:
-            name (str): The name of the variable. "MAIN.myStruct.myvar1"
+            name (str): The name of the variable. "MAIN:myStruct.myvar1"
             value (basic type): The value to be written.  1, 2.5, "Hello", ...
 
         Returns:
             None
         """
-        payload = {"variables": [{'name': name, 'value': value}]}
-        self._event_stream.push(event_type=EVENT_TYPE_DATA_WRITE_REQ, payload=payload)
+        payload = {"variables": [{"name": name, "value": value}]}
+        self._event_stream.push(
+            event_type=get_stream_name(EVENT_TYPE_DATA_WRITE_REQ, self._plc_name),
+            payload=payload,
+        )
+
+    def write_variables(self, data: dict):
+        """
+        Writes several variable values to the B&R Bridge in one request.
+
+        Args:
+            data (dict): Variable names mapped to the values to write.
+                {"MAIN:myStruct.myvar1": 1, "MAIN:str": "Hello"}
+
+        Returns:
+            None
+        """
+        writes = []
+        for name, value in data.items():
+            writes.append({"name": name, "value": value})
+        payload = {"variables": writes}
+        self._event_stream.push(
+            event_type=get_stream_name(EVENT_TYPE_DATA_WRITE_REQ, self._plc_name),
+            payload=payload,
+        )

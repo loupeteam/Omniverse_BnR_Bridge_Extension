@@ -1,0 +1,22 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "World"
+{
+}
+
+def Scope "PLC"
+{
+    def Scope "PLC1"
+    {
+        custom string br_bridge:Host = "127.0.0.1"
+        custom int br_bridge:Port = 8000
+        custom bool br_bridge:Enable = false
+        custom int br_bridge:RefreshRate = 20
+        custom string br_bridge:Variables = "TestProg:counter,TestProg:counter2,TestProg:bool,TestProg:lreal,TestProg:structOfStructs.var1,TestProg:structOfStructs.secondStruct.bool"
+    }
+}
