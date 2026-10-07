@@ -13,3 +13,19 @@ EXTENSION_TITLE = "B&R Bridge"
 EXTENSION_NAME = "loupe.simulation.br_bridge"
 EXTENSION_DESCRIPTION = "Bridge to B&R PLCs"
 
+ATTR_BR_BRIDGE_HOST = "br_bridge:Host"
+ATTR_BR_BRIDGE_PORT = "br_bridge:Port"
+ATTR_BR_BRIDGE_ENABLE = "br_bridge:Enable"
+ATTR_BR_BRIDGE_REFRESH = "br_bridge:RefreshRate"
+ATTR_BR_BRIDGE_READ_VARS = "br_bridge:Variables"
+
+"""
+    These are the default properties for the B&R Bridge when creating a new component
+"""
+default_br_properties = {
+    ATTR_BR_BRIDGE_ENABLE: False,
+    ATTR_BR_BRIDGE_REFRESH: 20,
+    ATTR_BR_BRIDGE_HOST: "127.0.0.1",
+    ATTR_BR_BRIDGE_PORT: 8000,
+    ATTR_BR_BRIDGE_READ_VARS: "",  # Ideally this should be a list of variables, but they aren't support on the gui
+}

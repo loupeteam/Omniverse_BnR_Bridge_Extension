@@ -3,7 +3,7 @@ reloadable = true
 order = 0
 
 [package]
-version = "0.1.0"
+version = "0.3.0-rc1"
 category = "simulation"
 title = "B&R Bridge"
 description = "A bridge for connecting Omniverse to B&R PLCs over websockets"
@@ -17,10 +17,33 @@ icon = "data/icon.png"
 
 [dependencies]
 "omni.kit.uiapp" = {}
+# Everything used in on_startup has to be declared here. An app that lists them in
+# its own dependencies is not enough: that says what to load, not what to load first
+# -- only the consuming extension's manifest orders startup.
+#
+#   omni.timeline        get_timeline_interface() raises outright if not yet loaded
+#   omni.usd             get_context() returns None before omni.usd has started
+#   omni.kit.menu.utils  add_menu_items is imported at module level
+"omni.timeline" = {}
+"omni.usd" = {}
+"omni.kit.menu.utils" = {}
 
 [python.pipapi]
-requirements = ['websockets', 'asyncio']
+requirements = ['websockets']
 use_online_index = true
+
+# The polling runtime and the OMJSON driver are plain-Python packages with no Kit
+# imports (see docs/ARCHITECTURE_PLAN.md in the Beckhoff repo): `plc_bridge`, the
+# vendor-neutral runtime and driver contract, in the Omni-Utils submodule, and
+# `br_bridge`, the B&R driver, at the repo root. Load both from the repo so working
+# on them needs no install step. plc_bridge first: br_bridge imports it.
+[[python.module]]
+name = "plc_bridge"
+path = "loupe/simulation/common/plc_bridge/src"
+
+[[python.module]]
+name = "br_bridge"
+path = "../../br_bridge/src"
 
 [[python.module]]
 name = "loupe.simulation.br_bridge"
@@ -30,11 +53,5 @@ public = true
 # Extra dependencies only to be used during test run
 dependencies = [
     "omni.kit.ui_test", # UI testing extension
-    "omni.usd",
-    "omni.kit.menu.utils",
-    "omni.physx"
 ]
 timeout = 60
-
-[package.target]
-kit = ["105.1"]
