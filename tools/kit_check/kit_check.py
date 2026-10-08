@@ -7,7 +7,8 @@ Run inside Kit with --exec (run.sh / run.ps1 do that). Environment:
                      (bridge:driver = "br")
   FIXCHECK_MODE      "" = live against a mock OMJSON server started here (both prims'
                      ports are pointed at it), "inject" = no server: an in-memory fake
-                     driver replaces BrDriver under "br"
+                     driver replaces BrDriver under "br", "arsim" = live against the
+                     PLC the stage names (test/AS Project in ARsim, 127.0.0.1:8000)
   FIXCHECK_BR_TESTS  folder holding br_bridge's mock_omjson.py (default: br_bridge/tests
                      in this checkout)
 Prints one line per check and "OK -- all fix checks passed" or "FAIL ...".
@@ -35,6 +36,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
 STAGE = os.path.abspath(os.environ.get("FIXCHECK_STAGE") or os.path.join(HERE, "stages", "br_test.usda")).replace("\\", "/")
 MODE = os.environ.get("FIXCHECK_MODE", "")
+ARSIM = MODE == "arsim"
 EXTS = ("loupe.simulation.br_bridge", "loupe.simulation.bridge")
 LIVE_SEC = 5.0
 MAIN_THREAD = threading.current_thread()
@@ -172,7 +174,9 @@ async def main():
     system = get_system()
     settings = carb.settings.get_settings()
     mock = None
-    if MODE != "inject":
+    if ARSIM:
+        print("  plc          ARsim: the stage's hosts and ports, no mock (test/AS Project must be running)")
+    elif MODE != "inject":
         mock = load_mock_omjson().MockOmjson(VARIABLES).start()
         print("  mock omjson  127.0.0.1:{} (no ARsim: live means this mock server)".format(mock.port))
 
@@ -269,7 +273,8 @@ async def main():
     for key in ("plc1_cb", "br2_cb"):
         if counts[key] < 0.6 * LIVE_SEC * 50:
             fails.append("{} well below 50 Hz: {} in {}s".format(key, counts[key], LIVE_SEC))
-    if script["data"] == 0 or script["last"] != VARIABLES["TestProg:counter2"]:
+    expected = isinstance(script["last"], int) if ARSIM else script["last"] == VARIABLES["TestProg:counter2"]
+    if script["data"] == 0 or not expected:
         fails.append("the BrBridge.Manager('PLC1') script got no data for the variable it added")
     if main_threads != {True}:
         fails.append("on_sample_main delivered off the main thread")
@@ -299,6 +304,8 @@ async def main():
     # --- 7. writes: write:value edit, Manager.write_variable, queue_write ack -------
     writes = []
     removers.append(neutral_rt.plc.on_write(writes.append))
+    before = neutral_rt.plc.latest()
+    lreal_before = before.values.get("TestProg:lreal") if ARSIM and isinstance(before, Sample) else None
     if lreal and lreal.IsValid():
         attr = lreal.GetAttribute("write:value")
         new_value = (attr.Get() or 0.0) + 1.0
@@ -313,11 +320,22 @@ async def main():
     print("  write ack    done={} ok={} error={}".format(got, handle.ok, handle.error))
     if not (got and handle.ok):
         fails.append("write not acknowledged")
+    if ARSIM:
+        # TestProg adds 2 to counter2 every cycle; stop it so the read-back is exact.
+        stop = neutral_rt.queue_write("TestProg:counterOn", False)
+        if not (stop.wait(2.0) and stop.ok):
+            fails.append("could not stop the ARsim counters: {}".format(stop.error))
     br.write_variable("TestProg:counter2", 99)
     await wait_for(lambda: script["last"] == 99, 2.0)
     print("  Manager      write_variable -> counter2 read back {}".format(script["last"]))
     if script["last"] != 99:
         fails.append("BrBridge.Manager.write_variable did not reach the PLC")
+    if ARSIM:
+        restore = {"TestProg:counterOn": True}
+        if lreal_before is not None:
+            restore["TestProg:lreal"] = lreal_before
+        handles = [neutral_rt.queue_write(name, value) for name, value in restore.items()]
+        print("  restore      {} ok={}".format(restore, [h.wait(2.0) and h.ok for h in handles]))
     if mock is not None:
         mock_writes = [r["data"] for r in mock.requests if r.get("type") == "write"]
         print("  mock saw     {} write(s), last {}".format(len(mock_writes), mock_writes[-1:] or None))

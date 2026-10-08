@@ -2,14 +2,15 @@
 # Headless Kit check for the B&R extension on the PLC bridge framework (see README.md).
 #
 # Usage:
-#   tools/kit_check/run.sh --kit <kit build root> [--exts DIR] [--bridge-exts DIR] [--stage FILE] [--mode inject|live] [--log FILE]
+#   tools/kit_check/run.sh --kit <kit build root> [--exts DIR] [--bridge-exts DIR] [--stage FILE] [--mode inject|live|arsim] [--log FILE]
 #
 # Every option can come from the environment instead:
 #   FIXCHECK_KIT_ROOT  folder holding kit/kit.exe (a kit-app-template _build/<platform>/release)
 #   FIXCHECK_EXTS      extension folder to load (default: this repo's exts/)
 #   FIXCHECK_BRIDGE_EXTS  folder holding loupe.simulation.bridge (default: ../Omni-Utils/exts next to this repo)
 #   FIXCHECK_STAGE     stage to open (default: stages/br_test.usda next to this script)
-#   FIXCHECK_MODE      "inject" = synthetic data, no PLC; "live" or empty = the PLC in the stage
+#   FIXCHECK_MODE      "inject" = synthetic data, no PLC; "live" or empty = a mock OMJSON
+#                      server; "arsim" = the PLC in the stage (test/AS Project in ARsim)
 #   FIXCHECK_LOG       where to keep Kit's output (default: kit_check.log in the current folder)
 #
 # The .kit is generated from fixcheck.kit.template with ${FIXCHECK_EXTS},
@@ -36,7 +37,7 @@ while [ $# -gt 0 ]; do
         --stage) STAGE="$2"; shift 2 ;;
         --mode)  MODE="$2"; shift 2 ;;
         --log)   LOG="$2"; shift 2 ;;
-        -h|--help) sed -n '2,19p' "$0"; exit 0 ;;
+        -h|--help) sed -n '2,20p' "$0"; exit 0 ;;
         *) echo "unknown argument: $1" >&2; exit 2 ;;
     esac
 done
