@@ -306,36 +306,55 @@ async def main():
     removers.append(neutral_rt.plc.on_write(writes.append))
     before = neutral_rt.plc.latest()
     lreal_before = before.values.get("TestProg:lreal") if ARSIM and isinstance(before, Sample) else None
-    if lreal and lreal.IsValid():
-        attr = lreal.GetAttribute("write:value")
-        new_value = (attr.Get() or 0.0) + 1.0
-        attr.Set(new_value)
-        await wait_for(lambda: any("TestProg:lreal" in w.values for w in writes), 2.0)
-        sent = [w for w in writes if "TestProg:lreal" in w.values]
-        print("  write-back   BR2 value={} sent={}".format(new_value, sent[-1] if sent else writes))
-        if not sent or sent[-1].error or sent[-1].errors:
-            fails.append("write:value edit was not written as TestProg:lreal")
-    handle = neutral_rt.queue_write("TestProg:counter", 42)
-    got = handle.wait(2.0)
-    print("  write ack    done={} ok={} error={}".format(got, handle.ok, handle.error))
-    if not (got and handle.ok):
-        fails.append("write not acknowledged")
-    if ARSIM:
-        # TestProg adds 2 to counter2 every cycle; stop it so the read-back is exact.
-        stop = neutral_rt.queue_write("TestProg:counterOn", False)
-        if not (stop.wait(2.0) and stop.ok):
-            fails.append("could not stop the ARsim counters: {}".format(stop.error))
-    br.write_variable("TestProg:counter2", 99)
-    await wait_for(lambda: script["last"] == 99, 2.0)
-    print("  Manager      write_variable -> counter2 read back {}".format(script["last"]))
-    if script["last"] != 99:
-        fails.append("BrBridge.Manager.write_variable did not reach the PLC")
-    if ARSIM:
-        restore = {"TestProg:counterOn": True}
-        if lreal_before is not None:
-            restore["TestProg:lreal"] = lreal_before
-        handles = [neutral_rt.queue_write(name, value) for name, value in restore.items()]
-        print("  restore      {} ok={}".format(restore, [h.wait(2.0) and h.ok for h in handles]))
+
+    def read_back(symbol):
+        sample = neutral_rt.plc.latest()
+        return sample.values.get(symbol) if isinstance(sample, Sample) else None
+
+    try:
+        if ARSIM:
+            # TestProg counts every cycle; stop it so every value written reads back exactly.
+            stop = neutral_rt.queue_write("TestProg:counterOn", False)
+            if not (stop.wait(2.0) and stop.ok):
+                fails.append("could not stop the ARsim counters: {}".format(stop.error))
+        if lreal and lreal.IsValid():
+            attr = lreal.GetAttribute("write:value")
+            new_value = (attr.Get() or 0.0) + 1.0
+            attr.Set(new_value)
+            await wait_for(lambda: any("TestProg:lreal" in w.values for w in writes), 2.0)
+            sent = [w for w in writes if "TestProg:lreal" in w.values]
+            print("  write-back   BR2 value={} sent={}".format(new_value, sent[-1] if sent else writes))
+            if not sent or sent[-1].error or sent[-1].errors:
+                fails.append("write:value edit was not written as TestProg:lreal")
+            if ARSIM:
+                # OMJSON echoes any write, so only a read proves it reached the PLC.
+                await wait_for(lambda: read_back("TestProg:lreal") == new_value, 2.0)
+                print("               read back {}".format(read_back("TestProg:lreal")))
+                if read_back("TestProg:lreal") != new_value:
+                    fails.append("TestProg:lreal did not read back as written")
+        handle = neutral_rt.queue_write("TestProg:counter", 42)
+        got = handle.wait(2.0)
+        print("  write ack    done={} ok={} error={}".format(got, handle.ok, handle.error))
+        if not (got and handle.ok):
+            fails.append("write not acknowledged")
+        if ARSIM:
+            await wait_for(lambda: read_back("TestProg:counter") == 42, 2.0)
+            print("               read back {}".format(read_back("TestProg:counter")))
+            if read_back("TestProg:counter") != 42:
+                fails.append("TestProg:counter did not read back as written")
+        br.write_variable("TestProg:counter2", 99)
+        await wait_for(lambda: script["last"] == 99, 2.0)
+        print("  Manager      write_variable -> counter2 read back {}".format(script["last"]))
+        if script["last"] != 99:
+            fails.append("BrBridge.Manager.write_variable did not reach the PLC")
+    finally:
+        if ARSIM:
+            # Put the PLC back even when a check above raised.
+            restore = {"TestProg:counterOn": True}
+            if lreal_before is not None:
+                restore["TestProg:lreal"] = lreal_before
+            handles = [neutral_rt.queue_write(name, value) for name, value in restore.items()]
+            print("  restore      {} ok={}".format(restore, [h.wait(2.0) and h.ok for h in handles]))
     if mock is not None:
         mock_writes = [r["data"] for r in mock.requests if r.get("type") == "write"]
         print("  mock saw     {} write(s), last {}".format(len(mock_writes), mock_writes[-1:] or None))

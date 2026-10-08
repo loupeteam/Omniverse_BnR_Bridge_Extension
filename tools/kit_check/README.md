@@ -80,10 +80,12 @@ both prims' ports are pointed at it through the options setter.
 connect to the host and port in the stage, `127.0.0.1:8000`, which is
 `test/AS Project` running in ARsim (see its README). The checks are the same,
 except that the PLC's values are live: `counter2` is any integer rather than the
-mock's 8, and before writing `counter2 = 99` the check stops TestProg's counters
-(`TestProg:counterOn = FALSE`) so the read-back is exact. At the end it sets
-`counterOn` back to TRUE and restores `TestProg:lreal`. `TestProg:counter` is
-left at whatever it has counted to from 42.
+mock's 8, and before the writes the check stops TestProg's counters
+(`TestProg:counterOn = FALSE`) so every write is proven by reading the value
+back (`lreal`, `counter = 42`, `counter2 = 99`), not only by the acknowledgement:
+OMJSON acknowledges a write to any symbol, known or not. Afterwards, also
+after an exception, it sets `counterOn` back to TRUE and restores
+`TestProg:lreal`. `TestProg:counter` counts on from 42.
 
 ## Kit tests
 
