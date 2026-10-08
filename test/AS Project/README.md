@@ -18,7 +18,7 @@ tag `v0.1.0` or from `main` before 0.3.0 is merged.
 | `LuxProg` (Cyclic#8, 2 ms) | `jsonWebSocketServer` on `127.0.0.1:8000`, 2 clients, 200 kB buffers |
 | `Logical/Libraries/Loupe` | OMJSON and its dependencies, as C sources |
 | `Logical/Libraries/_AS` | the B&R libraries those need: `AsBrStr`, `AsBrWStr`, `AsHttp`, `AsTCP`, `astime`, `operator`, `runtime`, `standard`, `sys_lib` |
-| OPC UA server (OpcUaCs 6.6.1) | default config, only so the simulator's deploy tooling can confirm which instance it reached |
+| OPC UA server (OpcUaCs 6.6.1) | default config, only so the simulator's deploy tooling can confirm which instance it reached. The OpcUaCs 6.6.1 technology package must be installed to build |
 
 Variables (OMJSON spelling):
 
@@ -37,6 +37,9 @@ Variables (OMJSON spelling):
 keyword, so the C task cannot create it. It was the same in the AS 4 project.
 
 `TestProg` behaves as it did in the AS 4 project; `gCounter` and `arr` are new.
+The Kit check stage, the extension docs and the driver tests read and write
+these symbols. Some docs use made-up symbols to show the syntax
+(`TestProg:axis.position` in `br_bridge/README.md`); those do not exist here.
 `LuxProg` is the program package from OMJSON 2.0.0 with the IP and port set
 explicitly and the client-disconnect flag removed (it needed the Hammers
 library, which the bridge has no use for).
@@ -72,8 +75,8 @@ Automation Studio does not handle long paths, so build through a short
 junction when the checkout is deep (a `.claude\worktrees\...` checkout is):
 
 ```powershell
-New-Item -ItemType Junction -Path C:\a\as\brtest -Target '<repo>\test\AS Project'
-& 'C:\Program Files (x86)\BRAutomation\AS6\bin-en\BR.AS.Build.exe' C:\a\as\brtest\AsProject.apj `
+New-Item -ItemType Junction -Path <short path> -Target '<repo>\test\AS Project'
+& 'C:\Program Files (x86)\BRAutomation\AS6\bin-en\BR.AS.Build.exe' <short path>\AsProject.apj `
     -c Simulation -buildMode Build -simulation -buildRUCPackage
 ```
 
@@ -107,3 +110,7 @@ Build output (`Temp`, `Binaries`, `Diagnosis`) and AS user files are ignored by
 ## Licensing
 
 The project and the Loupe libraries are licensed under the [MIT License](LICENSE).
+`Logical/Libraries/Loupe/StringExt/gdtoa` is under its own licence
+([LICENSE](Logical/Libraries/Loupe/StringExt/gdtoa/LICENSE)).
+`Logical/Libraries/_AS`, `StringExt/includes` and `StringExt/SG4` are B&R
+declarations, headers and link libraries as Automation Studio ships them.

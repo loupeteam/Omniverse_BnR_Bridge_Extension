@@ -49,6 +49,12 @@ This software contains source code provided by NVIDIA Corporation. This code is 
 * `BrBridge.py`
 * `tests/tests.py`
 * everything under `tools/`
+* `test/AS Project`, the Automation Studio test project, except as listed below
+
+### Files in `test/AS Project` under other terms:
+* `Logical/Libraries/Loupe/*`: Loupe's OMJSON, VarTools, WebSocket, TCPComm, StringExt and DataBuffer, copied from the public [loupeteam](https://github.com/loupeteam) repositories (versions and tags in the project's README), MIT License.
+* `Logical/Libraries/Loupe/StringExt/gdtoa`: David M. Gay's gdtoa, under its own licence ([LICENSE](test/AS%20Project/Logical/Libraries/Loupe/StringExt/gdtoa/LICENSE)).
+* `Logical/Libraries/_AS/*`, and `Logical/Libraries/Loupe/StringExt/includes` and `SG4`: B&R library declarations, headers and link libraries as Automation Studio ships them, for use with B&R Automation Studio and Automation Runtime.
 
 ### Files including Nvidia-generated code and modifications by Loupe (Nvidia Omniverse License Agreement AND MIT License; use must comply to whichever is most restrictive for any attribute):
 * `__init__.py`

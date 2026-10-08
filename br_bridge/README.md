@@ -15,6 +15,7 @@ interchangeable with the Beckhoff `AdsDriver`:
 from plc_bridge import PlcRuntime
 from br_bridge import BrDriver          # or: from beckhoff_bridge import AdsDriver
 
+# Symbols are illustrative: gCounter exists in test/AS Project, TestProg:axis does not.
 plc = PlcRuntime(BrDriver("192.168.0.61", 8000), refresh_ms=20, enabled=True)
 plc.set_read_variables(["gCounter", "TestProg:axis.position"])
 plc.on_sample(lambda s: print(s.seq, s.nested))   # {"gCounter": 7, "TestProg": {"axis": {"position": 12.5}}}
@@ -33,7 +34,7 @@ plc.stop()
 |---|---|
 | `connect()` | `websockets.connect("ws://host:port")` with the driver's timeout; no pings (the server does not answer them). |
 | `read(symbols)` | one `{"type": "read", "data": [...]}`; the `readresponse` list is flattened. A symbol missing from the reply is reported as `not in response`, one returned as `"undefined"` as `undefined`. Both go in `ReadResult.errors`, never as values. |
-| `write(values)` | one `{"type": "write", "data": {...}}`; symbols missing or `"undefined"` in the `writeresponse` are returned as rejected. |
+| `write(values)` | one `{"type": "write", "data": {...}}`; symbols missing or `"undefined"` in the `writeresponse` are returned as rejected. OMJSON 2.0.0 does neither for an unknown symbol: it echoes the request, so the driver also rejects a symbol whose most recent read failed (`<reason> on the last read`). A write to an unknown symbol that is never read is not caught. A write the server cannot parse gets no reply: the call times out after `timeout` and the link is reported lost, so the runtime reconnects. |
 | `disconnect()` | sends an empty frame first (OMJSON does not handle the close opcode well), then closes. Unblocks a read or write in flight on another thread. |
 | `is_connected()` | the socket is open and no timeout or closed-connection error has been seen since `connect()`. |
 | `symbol_separators` | `":."`, so `TestProg:axis.position` nests as `TestProg / axis / position`. |
