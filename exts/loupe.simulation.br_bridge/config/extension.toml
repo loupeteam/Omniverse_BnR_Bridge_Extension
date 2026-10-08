@@ -6,7 +6,7 @@ order = 0
 version = "0.3.0-rc1"
 category = "simulation"
 title = "B&R Bridge"
-description = "A bridge for connecting Omniverse to B&R PLCs over websockets"
+description = "B&R PLC driver for the loupe.simulation.bridge framework: OMJSON over websockets"
 authors = ["Loupe"]
 repository = "https://github.com/loupeteam/Omniverse_BnR_Bridge_Extension"
 keywords = ["B&R", "Digital Twin", "Websockets", "PLC"]
@@ -16,34 +16,36 @@ preview_image = "data/preview.png"
 icon = "data/icon.png"
 
 [dependencies]
-"omni.kit.uiapp" = {}
-# Everything used in on_startup has to be declared here. An app that lists them in
-# its own dependencies is not enough: that says what to load, not what to load first
-# -- only the consuming extension's manifest orders startup.
-#
-#   omni.timeline        get_timeline_interface() raises outright if not yet loaded
-#   omni.usd             get_context() returns None before omni.usd has started
-#   omni.kit.menu.utils  add_menu_items is imported at module level
-"omni.timeline" = {}
-"omni.usd" = {}
-"omni.kit.menu.utils" = {}
+# The framework owns everything a simulation touches (/PLC prims, the System,
+# the window, the message bus, the USD mirror); this extension only registers
+# the B&R driver with it. Any 0.3.x of the framework.
+"loupe.simulation.bridge" = { version = "0.3" }
+# Installs the pip requirements below before this extension starts. Without it
+# an app that enables only this extension never starts pipapi and the import of
+# br_bridge fails.
+"omni.kit.pipapi" = {}
 
 [python.pipapi]
-requirements = ['websockets']
+# The OMJSON driver is the plain-Python br-bridge package (br_bridge/ at this
+# repo's root) on top of websockets. plc-bridge, which br-bridge builds on, is
+# pinned by the framework extension: Kit installs every extension's pip
+# requirements into one site-packages and does not resolve conflicts, so a
+# vendor extension pins only its own library.
+requirements = ["websockets", "br-bridge>=0.3.0rc1,<0.4"]
+# What to import to decide whether a requirement is already satisfied. pipapi
+# tries this import first and calls pip only when it fails, so a checkout
+# installed editable into Kit's Python (Omni-Utils tools/dev_link.py --driver)
+# takes precedence over the wheels below. A submodule rather than the package:
+# Kit has its working directory on sys.path, and from this repo's root the bare
+# br_bridge/ folder imports as an empty namespace package, which would pass a
+# package-level check and skip the install.
+modules = ["websockets", "br_bridge.driver"]
+# Until br-bridge is on PyPI its wheel ships in wheels/ in the extension folder
+# (relative to it); tools/build_wheels.py fills it, with the plc-bridge and
+# websockets wheels the install needs alongside. pip tries the archive first
+# with --no-index, then the online index.
+archiveDirs = ["wheels"]
 use_online_index = true
-
-# The polling runtime and the OMJSON driver are plain-Python packages with no Kit
-# imports (see docs/ARCHITECTURE_PLAN.md in the Beckhoff repo): `plc_bridge`, the
-# vendor-neutral runtime and driver contract, in the Omni-Utils submodule, and
-# `br_bridge`, the B&R driver, at the repo root. Load both from the repo so working
-# on them needs no install step. plc_bridge first: br_bridge imports it.
-[[python.module]]
-name = "plc_bridge"
-path = "loupe/simulation/common/plc_bridge/src"
-
-[[python.module]]
-name = "br_bridge"
-path = "../../br_bridge/src"
 
 [[python.module]]
 name = "loupe.simulation.br_bridge"

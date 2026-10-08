@@ -1,17 +1,21 @@
 [package]
-title = "Moonlight Rig"
+title = "BR bridge fix check"
 version = "0.1.0"
-description = "Animatronic head rig: viewport, PhysX, and the Moonlight slider panel."
+description = "Headless app that loads the B&R extension and the PLC bridge framework for tools/kit_check/kit_check.py."
 keywords = ["experience", "app", "usd"]
 template_name = "omni.usd_composer"
 
-# Built against Kit SDK 108.1.0, whose RTX renderer works on driver 616.56.
-# Isaac Sim 5.1 pins Kit 107.3.x, whose rtx.scenedb.plugin.dll faults with an access
-# violation on this driver -- which is why the rig is hosted here instead.
+# Copied from Omni-Utils tools/kit_check. run.sh / run.ps1 generate the .kit
+# from this template: ${FIXCHECK_EXTS} becomes the extension folder under test,
+# ${FIXCHECK_BRIDGE_EXTS} the folder holding loupe.simulation.bridge (Omni-Utils
+# exts/) and ${FIXCHECK_KIT_ROOT} the kit-app-template build (the folder holding
+# kit/kit.exe). Kit resolves ${app} to the generated
+# file's folder, which is a temp dir, so the build's folders are named in full.
 #
-# Drop this in your kit-app-template at source/apps/moonlight_composer.kit, then
-# `repo build`. The version-lock block the template generates is deliberately absent;
-# the build writes it.
+# The dependency list is the kit-app-template USD Composer app with the project
+# extensions removed: everything the bridge touches (omni.usd, omni.timeline,
+# the menu utils, the stage and property windows the mirror is inspected with)
+# resolves from the build's extscache.
 
 [dependencies]
 # --- shell ---
@@ -21,7 +25,7 @@ template_name = "omni.usd_composer"
 "omni.kit.window.status_bar" = {}
 "omni.kit.window.console" = {}
 "omni.kit.window.extensions" = {}
-"omni.kit.window.script_editor" = {}      # for tools/omniverse_smoketest.py
+"omni.kit.window.script_editor" = {}
 
 # --- menus ---
 "omni.kit.menu.utils" = {}
@@ -49,49 +53,52 @@ template_name = "omni.usd_composer"
 "omni.kit.selection" = {}
 "omni.kit.context_menu" = {}
 
-# --- physics: what wolf_head_physics.usda needs ---
+# --- physics ---
 "omni.usdphysics" = {}
 "omni.physx" = {}
 "omni.physx.stageupdate" = {}
-# The bridge calls omni.timeline.get_timeline_interface() in its on_startup but
-# does not declare it. Undeclared, the interface is not up yet and the extension throws
-# "Failed to acquire interface: omni::timeline::ITimeline" -- while still reporting
-# itself as enabled. Naming it here makes Kit load it first.
 "omni.timeline" = {}
 
-# --- the PLC link (vendored under ext-vendor/, see plc/README.md) ---
-# Declared rather than passed with --enable so Kit resolves the load order itself.
+# --- the extension under test ---
+# Declared rather than passed with --enable so Kit resolves the load order
+# itself; it pulls in loupe.simulation.bridge through its own dependency.
 "loupe.simulation.br_bridge" = {}
 
 [settings.app]
-name = "Moonlight Rig"
+name = "BR bridge fix check"
 content.emptyStageOnStart = false
 fastShutdown = true
-
-# Off on purpose. The slider panel writes USD attributes directly; with the Fabric scene
-# delegate the viewport reads from Fabric instead, and edits can fail to show. Turn it
-# back on once you have confirmed the sliders move geometry.
 useFabricSceneDelegate = false
 
 [settings.app.window]
-title = "Moonlight Rig"
+title = "BR bridge fix check"
 width = 1920
 height = 1080
 
 [settings.app.extensions]
 registryEnabled = true
 
+# The bridge is configured by the stage: prims under /PLC carrying bridge:driver
+# and the driver's options (or the 0.3.0rc1 br_bridge:* attributes). kit_check.py
+# enables communication itself, so the stage ships Enable = false.
+
 [settings.app.exts.folders]
-# D:/prj/Sandboxed/Moonlight is replaced with this checkout's path by tools/stage_kit.py, which is what
-# copies this file into kit-app-template for the build. It cannot be a path relative to
-# ${app}: Kit resolves that to source/apps during precache and to _build/.../release/apps
-# at runtime, so one relative path always breaks the other -- and breaking precache is a
-# build failure, since that is where the version lock resolves dependencies.
 '++' = [
-    "${app}/../exts",
-    "${app}/../extscache",
+    "${FIXCHECK_KIT_ROOT}/exts",
+    "${FIXCHECK_KIT_ROOT}/extscache",
+    "${FIXCHECK_KIT_ROOT}/apps",
     "${FIXCHECK_EXTS}",
+    "${FIXCHECK_BRIDGE_EXTS}",
 ]
+
+[settings.exts."omni.kit.pipapi"]
+# The framework installs plc-bridge from its own wheels/ folder, which only a
+# packaged build fills (Omni-Utils tools/build_wheels.py). The B&R extension's
+# wheels/ (tools/build_wheels.py here) carries plc-bridge as well, since
+# br-bridge needs it; naming it app-wide lets the framework, which starts
+# first, install from it too, so the read-only Omni-Utils checkout needs no
+# build step.
+archiveDirs = ["${FIXCHECK_EXTS}/loupe.simulation.br_bridge/wheels"]
 
 [settings.app.viewport]
 autoFrame.mode = "first_open"

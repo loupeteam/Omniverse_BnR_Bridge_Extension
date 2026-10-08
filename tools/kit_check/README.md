@@ -1,27 +1,84 @@
 # Headless Kit check
 
-Runs the extension inside a built Kit app without a window, opens a stage with
-`/PLC` prims, and checks: startup, one daemon worker per PLC, the options
-setter, data delivery (message bus, `on_sample`, `latest()`), the USD mirror,
-write-back through `write:value`, write acknowledgement, and disconnect on
-disable. Live mode needs a PLC; `FIXCHECK_MODE=inject` feeds synthetic data.
+Runs the B&R extension and the framework it registers with
+(`loupe.simulation.bridge`, from Omni-Utils) inside a built Kit app without a
+window, and checks:
 
-Copied from the Beckhoff repo's `tools/kit_check` (Phase 2 of its
-`docs/IMPLEMENTATION_PLAN.md`) with the extension, attribute and symbol names
-swapped. `stages/br_test.usda` carries a `/PLC/PLC1` prim pointing at
-`127.0.0.1:8000` and reading the `TestProg` symbols of `test/AS Project`, so
-live mode runs against that project in ARsim, or against the mock OMJSON server
-from `br_bridge/tests/mock_omjson.py` started on port 8000.
+- both extensions start, and `loupe.simulation.br_bridge` registered
+  `br_bridge.BrDriver` under the driver name `br` with the legacy namespace
+  `br_bridge`;
+- the stage's two PLC prims come up under one `System`: `/PLC/PLC1` in the
+  0.3.0rc1 form (`br_bridge:*` attributes, warned as deprecated) and `/PLC/BR2`
+  in the neutral form (`bridge:driver = "br"`, `br:Host`, `br:Port`);
+- one daemon worker per PLC, the options setter in both spellings;
+- a script written for 0.3.0rc1 runs unchanged: `from loupe.simulation.br_bridge
+  import BrBridge` (warns), `BrBridge.Manager("PLC1")` with an init callback
+  that adds a variable and a data callback that reads it, `write_variable`;
+- data on the legacy and neutral bus names, `on_sample`, `latest()`, and
+  `on_sample_main` on the main thread;
+- the mirror (nested member, array element, the `:` kept in `symbol`),
+  write-back through `write:value`, and the write acknowledgement;
+- a 0.1.x setup runs unchanged: a stage with no PLC prim and the 0.1.0
+  persistent settings, where `BrBridge.Manager()` (no name, warns) creates
+  `PLC1` in memory, data arrives, and nothing is authored into the stage;
+- disconnect on disable.
 
-Today it is wired to the Moonlight sandbox (`D:\prj\Sandboxed\Moonlight`, Kit
-108): `run.sh` carries those paths (override with `MOONLIGHT`) and
-`fixcheck.kit.template` is that app's `.kit` with the extension folder
-substituted for `${FIXCHECK_EXTS}`. Phase 1 generalises it.
+| File | Role |
+|---|---|
+| `kit_check.py` | the check, run inside Kit with `--exec`; reads `FIXCHECK_STAGE` and `FIXCHECK_MODE` |
+| `fixcheck.kit.template` | a USD Composer app depending on `loupe.simulation.br_bridge`; `${FIXCHECK_EXTS}`, `${FIXCHECK_BRIDGE_EXTS}` and `${FIXCHECK_KIT_ROOT}` are filled in |
+| `run.sh`, `run.ps1` | generate the `.kit` in a temp folder, run `kit.exe` from there, print the check's lines, exit 0 on `OK` |
+| `stages/br_test.usda` | `/PLC/PLC1` with `br_bridge:*` attributes, `/PLC/BR2` with `bridge:driver = "br"`, both at `127.0.0.1:8000` |
 
-```bash
-FIXCHECK_MODE=inject bash tools/kit_check/run.sh exts out.log   # no PLC needed
-bash tools/kit_check/run.sh exts out.log                         # live, PLC on 127.0.0.1:8000
+Copied from Omni-Utils `tools/kit_check` (Phase 3 of the Beckhoff repo's
+`docs/IMPLEMENTATION_PLAN.md`) and reduced to the B&R driver.
+
+## Running
+
+You need a kit-app-template build (the folder holding `kit/kit.exe`, usually
+`_build/windows-x86_64/release`) whose `extscache` has USD Composer's
+extensions, an Omni-Utils checkout for `loupe.simulation.bridge`, and the
+wheels this extension installs:
+
+```
+python tools/build_wheels.py --plc-bridge <Omni-Utils>/plc_bridge
 ```
 
-Both must end with `OK -- all fix checks passed`. `run.sh` is ignored by the
-repo's `.gitignore` pattern for `*.sh`; it is force-added.
+The generated app names `exts/loupe.simulation.br_bridge/wheels/` as an
+app-wide pip archive, so the framework, which starts first, installs
+`plc-bridge` from it too and the Omni-Utils checkout needs no build step.
+A checkout linked into Kit's Python with Omni-Utils `tools/dev_link.py`
+takes precedence over the wheels (pipapi's import check passes first).
+
+```powershell
+tools\kit_check\run.ps1 -Kit D:\kit-app-template\_build\windows-x86_64\release -BridgeExts D:\Omni-Utils\exts
+tools\kit_check\run.ps1 -Kit ... -Mode inject      # no server: a fake driver under "br"
+```
+
+```bash
+tools/kit_check/run.sh --kit D:/kit-app-template/_build/windows-x86_64/release --bridge-exts D:/Omni-Utils/exts --log live.log
+```
+
+Options: `--kit` / `-Kit` (required), `--exts` (default: this repo's `exts/`),
+`--bridge-exts` (default: `../Omni-Utils/exts` next to this repo),
+`--stage` (default: `stages/br_test.usda`), `--mode inject|live`, `--log`
+(default: `kit_check.log` in the current folder). Each has an environment
+variable fallback: `FIXCHECK_KIT_ROOT`, `FIXCHECK_EXTS`,
+`FIXCHECK_BRIDGE_EXTS`, `FIXCHECK_STAGE`, `FIXCHECK_MODE`, `FIXCHECK_LOG`.
+
+A run takes about 40 s and ends with `OK -- all fix checks passed` or
+`FAIL -- ...`. Kit's exit code is 7 by design: the script quits the app and,
+because `omni.kit.window.file` can cancel a headless quit on a dirty stage,
+forces the exit after 15 s. The launchers exit 0 on `OK`.
+
+**Live mode runs against the mock OMJSON server** from
+`br_bridge/tests/mock_omjson.py` (or `FIXCHECK_BR_TESTS`), started in-process;
+both prims' ports are pointed at it through the options setter. It is not an
+ARsim run: the repo's `test/AS Project` is Automation Studio 4.10, and running
+it in ARsim needs that version (or the project converted to AS6).
+
+## Kit tests
+
+The extension's `omni.kit.test` suite (driver registration, the `BrBridge`
+compatibility module, `Manager()` without a name) runs with
+`tools\kit_test.ps1 -Kit <kit build root> -BridgeExts <Omni-Utils>\exts`.

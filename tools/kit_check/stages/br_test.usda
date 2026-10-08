@@ -11,6 +11,9 @@ def Xform "World"
 
 def Scope "PLC"
 {
+    # A 0.3.0rc1 prim: no bridge:driver, the vendor attributes under
+    # br_bridge:*, Variables as a comma-separated string. The framework treats
+    # it as driver "br" (registered by loupe.simulation.br_bridge) and warns once.
     def Scope "PLC1"
     {
         custom string br_bridge:Host = "127.0.0.1"
@@ -18,5 +21,16 @@ def Scope "PLC"
         custom bool br_bridge:Enable = false
         custom int br_bridge:RefreshRate = 20
         custom string br_bridge:Variables = "TestProg:counter,TestProg:counter2,TestProg:bool,TestProg:lreal,TestProg:structOfStructs.var1,TestProg:structOfStructs.secondStruct.bool"
+    }
+
+    # A 0.3 prim in the neutral form.
+    def Scope "BR2"
+    {
+        custom string bridge:driver = "br"
+        custom bool bridge:Enable = false
+        custom int bridge:RefreshRate = 20
+        custom string[] bridge:Variables = ["TestProg:counter", "TestProg:lreal", "TestProg:bool", "TestProg:structOfStructs", "TestProg:arr"]
+        custom string br:Host = "127.0.0.1"
+        custom int br:Port = 8000
     }
 }
