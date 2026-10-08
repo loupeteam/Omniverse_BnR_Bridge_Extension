@@ -15,7 +15,7 @@ This is the preferred method. Open up the extensions manager by navigating to `W
 ### Install from source
 
 - Clone this repo and [Omni-Utils](https://github.com/loupeteam/Omni-Utils) (the framework). No submodules any more.
-- Run `python tools/build_wheels.py --plc-bridge <Omni-Utils>/plc_bridge` once, so the extension finds its pip requirements (`br-bridge`, `plc-bridge`, `websockets`) in its `wheels/` folder until they are on PyPI. Alternatively, link the checkouts into Kit's Python with Omni-Utils `tools/dev_link.py <kit> --driver <this repo>/br_bridge`.
+- Until the packages are on PyPI, fill both extensions' `wheels/` folders once: `python <Omni-Utils>/tools/build_wheels.py` (the framework's `plc-bridge`) and `python tools/build_wheels.py --plc-bridge <Omni-Utils>/plc_bridge` (this extension's `br-bridge`, `plc-bridge`, `websockets`). Each extension installs only from its own folder, so skipping the first leaves the framework without `plc-bridge`. Alternatively, link the checkouts into Kit's Python with Omni-Utils `tools/dev_link.py <kit> --driver <this repo>/br_bridge`, which covers both.
 - In your Omniverse app, open the extensions manager (`Window / Extensions`), open the general extension settings, and add both `exts` folders (this repo's and Omni-Utils') to `Extension Search Paths`.
 - Search for `B&R BRIDGE` and enable it.
 
@@ -90,7 +90,7 @@ manager.write_variable("TestProg:counter", 1)
 
 See the framework's `docs/CONSUMING.md` for which way to pick and the thread rules.
 
-`from loupe.simulation.br_bridge import BrBridge` still works but is **deprecated**: it warns on import and serves `Manager`, `get_system` and the `EVENT_TYPE_*` constants on the 0.1.0 bus names (`loupe.simulation.br_bridge.*`). Off by default from 0.4, removed in 0.5.
+`from loupe.simulation.br_bridge import BrBridge` still works but is **deprecated**: it warns on import and serves `Manager`, `get_system` and the `EVENT_TYPE_*` constants on the legacy `br_bridge` namespace: per-PLC events named `loupe.simulation.br_bridge.<KIND>.<plc>`, which the framework pushes next to its neutral names. Off by default from 0.4, removed in 0.5. `Manager` takes the PLC name as `Manager("PLC1")`, `Manager(Name="PLC1")` or `Manager(name="PLC1")`.
 
 # Testing
 

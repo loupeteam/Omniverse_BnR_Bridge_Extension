@@ -16,13 +16,18 @@ The extension is a thin driver for the vendor-neutral PLC bridge framework `loup
 
 # Working from a clone
 
-Until the packages are on PyPI, the extension installs `br-bridge`, `plc-bridge` and `websockets` from its `wheels/` folder. Fill it once, and again after a version bump:
+Until the packages are on PyPI, each extension installs its pip requirements from its own `wheels/` folder, and both folders have to be filled. Kit's pipapi looks only in the archive folders of the extensions started so far and then on PyPI, so the framework, which starts first, cannot find `plc-bridge` in this extension's folder. Once, and again after a version bump:
 
 ```
-python tools/build_wheels.py --plc-bridge <Omni-Utils checkout>/plc_bridge
+python <Omni-Utils checkout>/tools/build_wheels.py                                   # the framework: plc-bridge
+python tools/build_wheels.py --plc-bridge <Omni-Utils checkout>/plc_bridge          # this extension: br-bridge, plc-bridge, websockets
 ```
 
-Or run from source: Omni-Utils `tools/dev_link.py <kit build root> --driver <this repo>/br_bridge` installs both checkouts editable into Kit's Python, and Kit's pipapi then skips the wheels (it imports `br_bridge.driver` before it calls pip). Add both repos' `exts` folders to the app's extension search paths.
+Or run from source: Omni-Utils `tools/dev_link.py <kit build root> --driver <this repo>/br_bridge` installs both checkouts editable into Kit's Python, and Kit's pipapi then skips the wheels of both extensions (it imports `plc_bridge.runtime` and `br_bridge.driver` before it calls pip). Either way, add both repos' `exts` folders to the app's extension search paths.
+
+The `wheels/` folder holds the websockets wheel built for the Python that ran the script plus pure-Python websockets wheels (the same version, and the newest one for Python 3.10), so it installs on Kit 105 and later on any platform.
+
+`tools/kit_check` and `tools/kit_test.ps1` skip the framework's build step on purpose: they name this extension's `wheels/` folder as an app-wide pip archive (`/exts/omni.kit.pipapi/archiveDirs`), so the framework installs `plc-bridge` from it too. A normal app does not do that.
 
 # Upgrading from 0.1.0
 

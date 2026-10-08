@@ -88,7 +88,7 @@ The vendor-named surfaces are a one-release alias. Each logs a deprecation warni
 | Prim attributes `br_bridge:*` without `bridge:driver` | read, warned once per prim | only behind a setting | removed |
 | `BrBridge.Manager()` with no name | works, warns | removed (announced in 0.3.0rc1) | |
 
-- **`Manager()` with no name** addresses `PLC1`. If no `/PLC/PLC1` prim is loaded it creates that runtime in memory from the old persistent settings and logs a warning, so an unchanged 0.1.0 script on an unchanged machine still connects. The runtime is not saved with the stage and disappears when the stage closes, until the next `Manager()` call. Do Step 1 to make it permanent.
+- **`Manager()` with no name** addresses `PLC1`. If no `/PLC/PLC1` prim is loaded it creates that runtime in memory from the old persistent settings and logs a warning, so an unchanged 0.1.0 script on an unchanged machine still connects. The runtime is never saved with the stage. Whenever the framework rescans (a stage is opened, `Refresh` in the window, a driver extension is enabled or reloaded) it drops runtimes without a prim; the compatibility module then re-creates `PLC1` on the next app update with the settings it last had (address, enable, refresh rate, variables) and logs that it did. The script's init callback runs again, as it did on every 0.1.0 init event. A `/PLC/PLC1` prim in the opened stage takes precedence. Do Step 1 to make it permanent.
 - **Data callbacks.** Same payload shape; a `meta` key with the PLC name is added.
 - **Init callbacks.** Still called once immediately with `None` and again when the PLC's runtime is created.
 - **Variable names.** `Task:var.member[i]` as before; the parser is the shared `plc_bridge.nest_symbol` with the same `":."` separators, and the 0.1.0 parser tests run against it unchanged (`br_bridge/tests/test_symbols_legacy.py`).
@@ -96,11 +96,12 @@ The vendor-named surfaces are a one-release alias. Each logs a deprecation warni
 ## What breaks
 
 - **Subscribing to the message bus directly** with the `EVENT_TYPE_*` constants, instead of through `Manager`. The events are per PLC: `loupe.simulation.bridge.DATA_READ.PLC1`. Build the id with `loupe.simulation.bridge.bus.get_stream_name(EVENT_TYPE_DATA_READ, "PLC1")`.
+- **`DATA_INIT` payloads** carry `{"meta": {"name": "PLC1"}}` instead of 0.1.0's `{"data": {}}`. An init callback that read `event.payload["data"]` fails; one that only adds variables (the documented use) is unaffected.
 - **`STATUS` payloads** on the neutral names carry a structured problem, `{"kind", "text", "symbols"}`; the legacy names still carry the text.
 - **Importing `loupe.simulation.br_bridge.websockets_driver`** or any other module of the extension besides `BrBridge`. They are gone. Use `br_bridge.BrDriver` (synchronous, implements the `plc_bridge.PlcDriver` contract) or, from inside Kit, `loupe.simulation.bridge.get_plc("PLC1")` for the running runtime.
 - **The old persistent settings are no longer written.** The window edits the PLC prim instead.
 - **The `Dev Tools` section** of the window (latency fields, `Add variables for test program`, ad-hoc read and write fields) is gone. Use the variables field and the mirror prims' `write:value` instead.
-- **Kit older than 105.** The code uses Python 3.10 syntax.
+- **Kit older than 105.** The code uses Python 3.10 syntax. On Kit 105 to 108 (Python 3.10) pip takes the newest websockets that supports 3.10 (16.x) from the bundled pure-Python wheels; later Kits take the current one.
 
 ## Status messages
 
