@@ -37,7 +37,8 @@ Version 0.3.0 moves the PLC connection into the USD stage and supports several P
 
 - `br_bridge/`: `pip install -e <Omni-Utils>/plc_bridge -e ./br_bridge[test]`, then `pytest` in `br_bridge/` (driver tests against an in-process mock OMJSON server, and the parser tests).
 - Kit tests: `tools/kit_test.ps1 -Kit <kit build root> -BridgeExts <Omni-Utils>/exts`, or the Tests tab of the Extensions Manager.
-- Headless, end to end: `tools/kit_check` (see its README), against a mock OMJSON server. ARsim against `test/AS Project` is not covered yet: the project is Automation Studio 4.10.
+- Headless, end to end: `tools/kit_check` (see its README), against a mock OMJSON server by default, or with `-Mode arsim` against `test/AS Project` running in ARsim.
+- PLC side: `test/AS Project` is an Automation Studio 6 project (AR 6.7.6, OMJSON 2.0.0) that serves the test variables on `ws://127.0.0.1:8000`; its README says how to build it and run it in ARsim. It replaced the Automation Studio 4.10 project in 0.3.0, which is no longer in the repo.
 
 # Licensing
 
