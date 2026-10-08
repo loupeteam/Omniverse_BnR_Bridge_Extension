@@ -1,6 +1,8 @@
 # B&R Bridge
 
-The B&R Bridge is an [NVIDIA Omniverse](https://www.nvidia.com/en-us/omniverse/) extension for communicating with [B&R PLCs](https://www.br-automation.com/) using websockets and the [OMJSON](https://github.com/loupeteam/OMJSON) library. The PLC runs OMJSON's `jsonWebSocketServer`; the bridge connects to it, reads a list of variables cyclically and writes values back.
+The B&R Bridge connects [NVIDIA Omniverse](https://www.nvidia.com/en-us/omniverse/) to [B&R PLCs](https://www.br-automation.com/) using websockets and the [OMJSON](https://github.com/loupeteam/OMJSON) library. The PLC runs OMJSON's `jsonWebSocketServer`; the bridge connects to it, reads a list of variables cyclically and writes values back.
+
+Since 0.3.0 this extension is a thin driver for the vendor-neutral PLC bridge framework, [`loupe.simulation.bridge`](https://github.com/loupeteam/Omni-Utils) (from Omni-Utils), which it depends on and which Kit enables with it. The framework owns the PLC prims, the `PLC Bridge` window, the Python API, the message bus and the USD mirror; this extension registers the B&R driver, `br_bridge.BrDriver`, under the driver name `br`. The same simulation runs against a Beckhoff PLC by changing the driver attribute on the prim.
 
 Upgrading from 0.1.0? See [MIGRATION.md](MIGRATION.md).
 
@@ -8,125 +10,88 @@ Upgrading from 0.1.0? See [MIGRATION.md](MIGRATION.md).
 
 ### Install from registry
 
-This is the preferred method. Open up the extensions manager by navigating to `Window / Extensions`. The extension is available as a "Third Party" extension. Search for `B&R Bridge`, and click the slider to Enable it. Once enabled, the extension will be available as an option in the top menu banner of the Omniverse app.
+This is the preferred method. Open up the extensions manager by navigating to `Window / Extensions`. The extension is available as a "Third Party" extension. Search for `B&R Bridge`, and click the slider to enable it; Kit enables the `PLC Bridge` framework with it. The window is under `Loupe / PLC Bridge`.
 
 ### Install from source
 
-You can also install from source instead. In order to do so, follow these steps:
-- Clone the repo [here](https://github.com/loupeteam/Omniverse_BnR_Bridge_Extension) **with submodules** (`git clone --recurse-submodules ...`, or `git submodule update --init` after cloning). The shared runtime code lives in the `loupe/simulation/common` submodule.
-- In your Omniverse app, open the extensions manager by navigating to `Window / Extensions`.
-- Open the general extension settings, and add a new entry into the `Extension Search Paths` table. This should be the local path to the `exts` folder of the repo that was just cloned.
-- Back in the extensions manager, search for `B&R BRIDGE`, and enable it.
-- Once enabled, the extension will show up as an option in the top menu banner.
+- Clone this repo and [Omni-Utils](https://github.com/loupeteam/Omni-Utils) (the framework). No submodules any more.
+- Run `python tools/build_wheels.py --plc-bridge <Omni-Utils>/plc_bridge` once, so the extension finds its pip requirements (`br-bridge`, `plc-bridge`, `websockets`) in its `wheels/` folder until they are on PyPI. Alternatively, link the checkouts into Kit's Python with Omni-Utils `tools/dev_link.py <kit> --driver <this repo>/br_bridge`.
+- In your Omniverse app, open the extensions manager (`Window / Extensions`), open the general extension settings, and add both `exts` folders (this repo's and Omni-Utils') to `Extension Search Paths`.
+- Search for `B&R BRIDGE` and enable it.
 
-# Concepts
+# Configuring a PLC
 
-A **PLC** (also called a *component*) is a prim in the USD stage under `/PLC/`, for example `/PLC/PLC1`. The connection settings live as attributes on that prim, so they are saved with the stage and a stage can describe any number of PLCs:
+A PLC is a prim under `/PLC/` carrying `bridge:driver = "br"` and the B&R options under the `br:` namespace. The connection settings are saved with the stage, and a stage can describe any number of PLCs, of any registered vendor:
+
+```usda
+def Scope "PLC"
+{
+    def Scope "PLC1"
+    {
+        custom string   bridge:driver      = "br"
+        custom bool     bridge:Enable      = true
+        custom int      bridge:RefreshRate = 20
+        custom string[] bridge:Variables   = ["TestProg:counter", "TestProg:structOfStructs.var1"]
+        custom string   br:Host            = "127.0.0.1"
+        custom int      br:Port            = 8000
+    }
+}
+```
 
 | Attribute | Type | Default | Meaning |
 |---|---|---|---|
-| `br_bridge:Host` | string | `127.0.0.1` | IP address of the PLC |
-| `br_bridge:Port` | int | `8000` | Port of the OMJSON `jsonWebSocketServer` |
-| `br_bridge:Enable` | bool | `false` | Enable or disable the client |
-| `br_bridge:RefreshRate` | int | `20` | Cyclic read period in milliseconds |
-| `br_bridge:Variables` | string | `""` | Comma separated list of variables to read cyclically |
+| `bridge:driver` | string | | `"br"` for this extension |
+| `br:Host` | string | `127.0.0.1` | IP address of the PLC |
+| `br:Port` | int | `8000` | Port of the OMJSON `jsonWebSocketServer` |
+| `bridge:Enable` | bool | `false` | Enable or disable the client |
+| `bridge:RefreshRate` | int | `20` | Cyclic read period in milliseconds |
+| `bridge:Variables` | string[] | `[]` | Variables to read cyclically |
+| `bridge:MirrorToUsd` | bool | `true` | Mirror the values as prims under the PLC prim |
+| `bridge:MirrorSymbols` | string[] | `[]` | Mirror only these variables; empty means all |
 
-When the extension starts, and whenever a stage is opened or closed, every prim carrying these attributes becomes a running **runtime**: a worker thread that connects to the PLC, reads the cyclic variables at the refresh rate, and publishes the values on the Kit message bus. No window has to be opened for this to happen, so the bridge also works in headless apps.
+The framework's README has the full schema, the `autoConnect` safety setting, and the mirror layout. Prims written by 0.3.0rc1 (`br_bridge:Host`, `br_bridge:Port`, `br_bridge:Enable`, `br_bridge:RefreshRate`, `br_bridge:Variables` as a comma-separated string) still load, with a deprecation warning; see [MIGRATION.md](MIGRATION.md).
 
 Variable names follow OMJSON: `globalVar` for a global, `Task:localVar` for a task-local variable, with `.` for structure members and `[i]` for array elements, for example `TestProg:structOfStructs.secondStruct.array[2]`.
 
-Values read from the PLC are mirrored into the stage as prims below the PLC prim, one per variable, following the variable's structure. `TestProg:structOfStructs.var1` on `PLC1` becomes `/PLC/PLC1/TestProg/structOfStructs/var1`. An array element becomes a child prim of the array named `_<index>`, because a USD prim name cannot start with a digit: `TestProg:bigLrealArray[0]` becomes `/PLC/PLC1/TestProg/bigLrealArray/_0`. Each mirror prim has these attributes:
+When the framework starts, and whenever a stage is opened or closed, every PLC prim becomes a running runtime: a daemon worker thread that connects, reads the variables at the refresh rate and delivers the values. No window has to be opened, so the bridge also works headless.
 
-| Attribute | Meaning |
-|---|---|
-| `value` | Latest value read from the PLC |
-| `symbol` | The PLC variable name |
-| `write:value` | Set this to write a value to the PLC |
-| `write:pause` | While `true`, changes to `write:value` are not sent (edit several fields, then release) |
-| `write:once` | Set to `true` to send `write:value` a single time, even when paused |
+# The window
 
-The mirror prims live in the stage's **session layer**. They are visible to the property window, scripts and OmniGraph like any other prim, but they are never saved with the stage and do not count as unsaved changes. Edits you make to `write:value` in the property window are authored in your current edit target as usual.
+`Loupe / PLC Bridge` (the framework's window) lists the PLCs of the stage. For a B&R PLC it shows `PLC IP Address` and `PLC Port` below the common fields (`Enable`, `Refresh Rate (ms)`, the variables, `Write To USD` / `Update From USD`, connection and status).
 
-Mirroring can be switched off per PLC by adding a bool attribute `bridge:MirrorToUsd = false` to the PLC prim. Writes through `write:value` still work when the mirror is off.
+Status messages: `Connecting`, `Connected`, `Disconnected`, `Error Connecting: [...]` (wrong IP or port, PLC offline, `jsonWebSocketServer` not running), `Error Reading: [...]` (a symbol the PLC does not know is named: `<symbol>: undefined`, or `<symbol>: not in response`; `Reading OK` follows when it recovers), `Error Writing: [...]`.
 
-# Configuration
+# Using PLC data from Python
 
-Open the extension window by clicking on `Loupe / B&R Bridge` from the top menu.
-
-- **Add component**: type a name and click `Add` to create a new PLC prim under `/PLC/` with default settings.
-- **Select component**: choose which PLC the rest of the window shows. `Refresh` rescans the stage for PLC prims.
-- **Enable Client**: enable or disable the client for the selected PLC.
-- **Refresh Rate (ms)**: the period at which the client reads data from the PLC.
-- **PLC IP Address** and **PLC Port**: where the OMJSON `jsonWebSocketServer` listens.
-- **Cyclic Read Variables**: one variable name per line to read cyclically.
-- **Settings**: `Write To USD` stores the current settings on the PLC prim so they are saved with the stage. `Update From USD` reloads them from the prim.
-
-Changes made in the window take effect immediately on the running runtime, but are only persisted once written to USD.
-
-# Usage
-
-### Monitoring Extension Status
-
-The status of the selected PLC is shown in the `Status` field of the `Monitor` pane. Messages clear after a few seconds. Possible messages:
-- `Connecting`: the client is trying to connect to the PLC. It retries until it connects.
-- `Connected`: the connection was established.
-- `Disconnected`: the connection was lost or the client was disabled.
-- `Error Connecting: [...]`: the connection attempt failed (wrong IP or port, PLC offline, `jsonWebSocketServer` not running).
-- `Error Reading: [...]`: a read failed. A symbol the PLC does not know is reported as `Error Reading: <symbol>: undefined`, one it left out of its reply as `<symbol>: not in response`; `Reading OK` follows when it recovers.
-- `Error Writing: [...]`: a write failed or the PLC rejected a symbol.
-
-### Monitoring Variable Values
-
-Once variable reads are occurring, the `Monitor` pane shows a JSON string with the names and values of the variables being read. The same values are visible on the mirrored prims in the stage tree.
-
-### Performing read/write operations from Python
-
-The variables on the PLC that should be read or written can also be specified from a custom user extension or app that uses the API available from the `loupe.simulation.br_bridge` module. One `Manager` addresses one PLC, by the name of its prim under `/PLC/`.
-
-Scripts written for 0.1.0 that call `Manager()` with no name still work, but that form is **deprecated** and will be removed in 0.4.0. It addresses `PLC1` and, if no `/PLC/PLC1` prim is loaded, creates that runtime in memory from the 0.1.0 persistent settings and logs a warning. Add a `/PLC/PLC1` prim to the stage and pass the name explicitly.
+Import from the framework, which is the same for every vendor; spell the variables as the PLC knows them (`TestProg:lreal`):
 
 ```python
-from loupe.simulation.br_bridge import BrBridge
+from loupe.simulation.bridge import get_plc, on_sample_main
 
-# Instantiate the bridge for the PLC at /PLC/PLC1 and register lifecycle subscriptions
-br_bridge = BrBridge.Manager("PLC1")
-br_bridge.register_init_callback(on_plc_init)
-br_bridge.register_data_callback(on_message)
+def on_plc(sample):                       # main thread, once per app update
+    value = sample.values["TestProg:lreal"]
 
-# This function gets called once on init, and should be used to subscribe to cyclic reads.
-def on_plc_init( event ):
-    # Create a list of variable names to be read cyclically, and add to Manager
-    variables = [   'MAIN:custom_struct.var1',
-                    'MAIN:custom_struct.var_array[0]',
-                    'MAIN:custom_struct.var_array[1]']
+remove = on_sample_main("PLC1", on_plc)
 
-    br_bridge.add_cyclic_read_variables(variables)
-
-# This function is called every time the bridge receives new data
-def on_message( event ):
-    # Read the event data, which includes values for the PLC variables requested
-    data = event.payload['data']['MAIN']['custom_struct']['var_array']
-
-# In the app's cyclic logic (for example on_physics_step(), etc), writes can be performed as follows:
-def cyclic():
-    # Write the value `1` to PLC variable 'MAIN:custom_struct.var1'
-    br_bridge.write_variable('MAIN:custom_struct.var1', 1)
-
-    # Or several at once
-    br_bridge.write_variables({'MAIN:custom_struct.var1': 1, 'MAIN:custom_struct.var2': 2.5})
+plc = get_plc("PLC1")                     # the plc_bridge.PlcRuntime
+plc.queue_write("TestProg:lreal", 2.5)
 ```
 
-The system that owns all runtimes is also reachable, for example to create runtimes for prims added by a script:
+The message-bus `Manager` of 0.1.0 is there too, on the neutral bus names:
 
 ```python
-from loupe.simulation.br_bridge.BrBridge import get_system
+from loupe.simulation.bridge import Manager
 
-system = get_system()
-system.find_and_create_components()      # rescan the stage
-runtime = system.get_component("PLC1")   # the Runtime object for /PLC/PLC1
-runtime.plc                              # the plc_bridge.PlcRuntime: on_sample, latest(), queue_write
+manager = Manager("PLC1")
+manager.register_init_callback(lambda event: manager.add_cyclic_read_variables(["TestProg:counter"]))
+manager.register_data_callback(lambda event: print(event.payload["data"]["TestProg"]["counter"]))
+manager.write_variable("TestProg:counter", 1)
 ```
+
+See the framework's `docs/CONSUMING.md` for which way to pick and the thread rules.
+
+`from loupe.simulation.br_bridge import BrBridge` still works but is **deprecated**: it warns on import and serves `Manager`, `get_system` and the `EVENT_TYPE_*` constants on the 0.1.0 bus names (`loupe.simulation.br_bridge.*`). Off by default from 0.4, removed in 0.5.
 
 # Testing
 
-The driver and the parser are plain Python with a pytest suite under `br_bridge/tests` (see `br_bridge/README.md`). The Kit-side tests in the extensions manager (`Tests` tab) check that the extension loads and the libraries import inside Kit. `tools/kit_check` runs the whole thing headlessly against the `test/AS Project` PLC in ARsim or the mock OMJSON server.
+The driver is plain Python with a pytest suite under `br_bridge/tests` (see `br_bridge/README.md`). The Kit tests in this extension check the driver registration and the compatibility module (`tools/kit_test.ps1`). `tools/kit_check` runs the extension and the framework headlessly against a mock OMJSON server.
