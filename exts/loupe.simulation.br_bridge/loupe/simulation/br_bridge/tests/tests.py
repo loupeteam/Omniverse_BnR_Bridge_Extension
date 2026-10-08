@@ -99,9 +99,8 @@ class TestBrExtension(omni.kit.test.AsyncTestCase):
         try:
             first = system.get_component("PLC1")
             self.assertIsNotNone(first)
-            # The mirror is the framework's and logs a Tf error when the stage is
-            # replaced under it; this test is about the PLC, not the mirror.
-            first.options = {"bridge:MirrorToUsd": False}
+            # The mirror stays on: replacing the stage under a mirrored PLC
+            # must not raise or crash (fixed in the framework, OU #14).
             await app.next_update_async()
             for rescan in ("refresh", "register", "stage"):
                 if rescan == "refresh":
