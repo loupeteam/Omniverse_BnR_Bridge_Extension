@@ -14,6 +14,12 @@ missing from the folder fails the whole install. br_bridge is therefore built
 with its dependencies resolved, which puts the plc_bridge wheel built first and
 websockets into the folder as well.
 
+The websockets wheel pip picks there is built for the interpreter that runs
+this script (cp312-win_amd64, say), so the pure-Python websockets wheels are
+downloaded next to it: the same version for any platform, and the newest
+release that still supports Python 3.10 (Kit 105 to 108). pip then takes the
+speedups where they match and the pure wheel everywhere else.
+
 Run it before packaging the extension for a registry, and again after a
 version bump. Wheels of the two Loupe packages already in the folder are
 removed first, so a stale version cannot shadow the new one.
@@ -66,6 +72,17 @@ def main(argv=None):
         cmd = [args.python, "-m", "pip", "wheel", "--wheel-dir", args.out]
         cmd += ["--find-links", args.out] if deps else ["--no-deps"]
         subprocess.run(cmd + [sources[name]], check=True, stdout=subprocess.DEVNULL)
+
+    # Pure-Python websockets: the version just resolved, for any platform, and
+    # the newest one that installs on Python 3.10.
+    pyver = subprocess.run([args.python, "-c", "import sys; print('%d.%d' % sys.version_info[:2])"],
+                           check=True, capture_output=True, text=True).stdout.strip()
+    resolved = sorted({os.path.basename(w).split("-")[1] for w in glob.glob(os.path.join(args.out, "websockets-*.whl"))})
+    for requirement, python_version in [("websockets==" + v, pyver) for v in resolved] + [("websockets>=12", "3.10")]:
+        print("fetching pure-Python {} for Python {}".format(requirement, python_version))
+        subprocess.run([args.python, "-m", "pip", "download", requirement, "--only-binary=:all:", "--platform", "any",
+                        "--python-version", python_version, "--no-deps", "--dest", args.out],
+                       check=True, stdout=subprocess.DEVNULL)
 
     print("\n{}:".format(os.path.relpath(args.out, ROOT)))
     for whl in sorted(glob.glob(os.path.join(args.out, "*.whl"))):
