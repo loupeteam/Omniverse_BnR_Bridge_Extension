@@ -13,21 +13,6 @@ extern "C"
 #ifndef _BUR_PUBLIC
 #define _BUR_PUBLIC
 #endif
-/* Constants */
-#ifdef _REPLACE_CONST
- #define brwU8toUC 0U
- #define brwUCtoU8 1U
-#else
- #ifndef _GLOBAL_CONST
-   #define _GLOBAL_CONST _WEAK const
- #endif
- _GLOBAL_CONST unsigned char brwU8toUC;
- _GLOBAL_CONST unsigned char brwUCtoU8;
-#endif
-
-
-
-
 
 
 
@@ -43,6 +28,18 @@ _BUR_PUBLIC signed long brwcsncmp(unsigned short* pwcString1, unsigned short* pw
 _BUR_PUBLIC unsigned long brwcscpy(unsigned short* pDestination, unsigned short* pSource);
 _BUR_PUBLIC unsigned long brwcsrchr(unsigned short* pDestination, unsigned short symbol);
 _BUR_PUBLIC unsigned long brwcschr(unsigned short* pDestination, unsigned short symbol);
+
+
+/* Constants */
+#ifdef _REPLACE_CONST
+ #define brwU8toUC 0U
+ #define brwUCtoU8 1U
+#else
+ _GLOBAL_CONST unsigned char brwU8toUC;
+ _GLOBAL_CONST unsigned char brwUCtoU8;
+#endif
+
+
 
 
 #ifdef __cplusplus

@@ -1,8 +1,4 @@
-
+(* A global for clients that read a global rather than a task-local symbol *)
 VAR
-
-END_VAR
-
-VAR CONSTANT
-
+	gCounter : DINT := 0; (* Counts with TestProg:counter; AS only creates a global some task uses *)
 END_VAR

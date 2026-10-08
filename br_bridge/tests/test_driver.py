@@ -63,10 +63,34 @@ def test_unknown_and_undefined_symbols_are_errors_not_values(driver):
 
 def test_write_reports_rejected_symbols(driver, server):
     driver.connect()
+    # The server echoes an unknown symbol as written, so without a failed read
+    # only an "undefined" reply is caught.
     errors = driver.write({"gCounter": 8, "nope": 1, "undefThing": 2})
-    assert errors == {"nope": NOT_IN_RESPONSE, "undefThing": UNDEFINED}
+    assert errors == {"undefThing": UNDEFINED}
     assert server.variables["gCounter"] == 8
+    assert "nope" not in server.variables
     assert driver.read(["gCounter"]).values == {"gCounter": 8}
+
+
+def test_write_flags_a_symbol_whose_last_read_failed(driver, server):
+    driver.connect()
+    driver.read(["gCounter", "nope", "undefThing"])
+    errors = driver.write({"gCounter": 9, "nope": 1, "undefThing": 2})
+    assert errors == {
+        "nope": NOT_IN_RESPONSE + " on the last read",
+        "undefThing": UNDEFINED,
+    }
+    assert server.variables["gCounter"] == 9
+
+
+def test_a_good_read_clears_the_flag(driver, server):
+    driver.connect()
+    driver.read(["late"])
+    assert driver.write({"late": 1}) == {"late": NOT_IN_RESPONSE + " on the last read"}
+    server.variables["late"] = 0          # the symbol appears (a new download)
+    assert driver.read(["late"]).values == {"late": 0}
+    assert driver.write({"late": 2}) == {}
+    assert server.variables["late"] == 2
 
 
 def test_read_when_not_connected_raises(driver):

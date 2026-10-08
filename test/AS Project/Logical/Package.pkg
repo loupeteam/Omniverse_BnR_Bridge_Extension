@@ -5,7 +5,7 @@
     <Object Type="File" Description="Global data types">Global.typ</Object>
     <Object Type="File" Description="Global variables">Global.var</Object>
     <Object Type="Package" Description="Global libraries">Libraries</Object>
-    <Object Type="Package">Lux</Object>
-    <Object Type="Package">TestProg</Object>
+    <Object Type="Package" Description="OMJSON WebSocket server">Lux</Object>
+    <Object Type="Package" Description="Variables the bridge tests read and write">TestProg</Object>
   </Objects>
 </Package>

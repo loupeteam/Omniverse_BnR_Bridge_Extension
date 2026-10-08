@@ -19,6 +19,7 @@ void _CYCLIC ProgramCyclic(void)
 	if (counterOn) {
 		counter = counter + 1;
 		counter2 = counter2 + 2;
+		gCounter = gCounter + 1;
 	}
 	
 	// Cyclic resets

@@ -15,4 +15,5 @@ VAR
 	structOfStructs : myStruct;
 	counterOn : BOOL := TRUE; (*Are counters running?*)
 	counterToggle : BOOL := FALSE; (*Edge-sensitive toggle of counterOn*)
+	arr : ARRAY[0..2] OF LREAL := [10.0,11.0,12.0]; (*Short array for the bridge's array mirror checks*)
 END_VAR

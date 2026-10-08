@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<?AutomationStudio FileVersion="4.9"?>
+<Library Version="1.0.0" SubType="ANSIC" xmlns="http://br-automation.co.at/AS/Library">
+  <Files>
+    <File Description="Exported data types">VarTools.typ</File>
+    <File Description="Exported constants">VarTools.var</File>
+    <File Description="Exported functions and function blocks">VarTools.fun</File>
+    <File Description="Get variable information">varGetInfo.c</File>
+    <File Description="Get the value of a variable as a string">varGetValue.c</File>
+    <File Description="Get the value of a variable as a real">varGetValueReal.c</File>
+    <File Description="Get the value of a variable as a lreal">varGetValueLreal.c</File>
+    <File Description="Set the value of a variable from a string">varSetValue.c</File>
+    <File Description="Set the value of a variable it's own name">varPopulateMemberNames.c</File>
+    <File Description="Get a list of all local and global variables with a given name">varGetVariableList.c</File>
+    <File Description="Set the value of a variable from a string">varVariableWatch.c</File>
+    <File>variableBrowser.c</File>
+    <File Description="Force refresh of variable information in next getValue call">varRefresh.c</File>
+    <File>varToolsInternal.h</File>
+    <File Description="Get variable all information">varGetAllVars.c</File>
+    <File Description="Internal functions for varGetAllVars">varGetAllVarsInternal.h</File>
+    <File Description="Internal functions for varGetAllVars">varGetAllVarsInternal.c</File>
+  </Files>
+  <Dependencies>
+    <Dependency ObjectName="sys_lib" />
+    <Dependency ObjectName="AsBrStr" />
+    <Dependency ObjectName="AsBrWStr" />
+    <Dependency ObjectName="stringext" FromVersion="1.0.0" />
+  </Dependencies>
+</Library>

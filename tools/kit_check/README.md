@@ -25,7 +25,7 @@ window, and checks:
 
 | File | Role |
 |---|---|
-| `kit_check.py` | the check, run inside Kit with `--exec`; reads `FIXCHECK_STAGE` and `FIXCHECK_MODE` |
+| `kit_check.py` | the check, run inside Kit with `--exec`; reads `FIXCHECK_STAGE` and `FIXCHECK_MODE` (`inject`, empty for the mock, or `arsim`) |
 | `fixcheck.kit.template` | a USD Composer app depending on `loupe.simulation.br_bridge`; `${FIXCHECK_EXTS}`, `${FIXCHECK_BRIDGE_EXTS}` and `${FIXCHECK_KIT_ROOT}` are filled in |
 | `run.sh`, `run.ps1` | generate the `.kit` in a temp folder, run `kit.exe` from there, print the check's lines, exit 0 on `OK` |
 | `stages/br_test.usda` | `/PLC/PLC1` with `br_bridge:*` attributes, `/PLC/BR2` with `bridge:driver = "br"`, both at `127.0.0.1:8000` |
@@ -53,6 +53,7 @@ takes precedence over the wheels (pipapi's import check passes first).
 ```powershell
 tools\kit_check\run.ps1 -Kit D:\kit-app-template\_build\windows-x86_64\release -BridgeExts D:\Omni-Utils\exts
 tools\kit_check\run.ps1 -Kit ... -Mode inject      # no server: a fake driver under "br"
+tools\kit_check\run.ps1 -Kit ... -Mode arsim       # test/AS Project running in ARsim
 ```
 
 ```bash
@@ -61,7 +62,7 @@ tools/kit_check/run.sh --kit D:/kit-app-template/_build/windows-x86_64/release -
 
 Options: `--kit` / `-Kit` (required), `--exts` (default: this repo's `exts/`),
 `--bridge-exts` (default: `../Omni-Utils/exts` next to this repo),
-`--stage` (default: `stages/br_test.usda`), `--mode inject|live`, `--log`
+`--stage` (default: `stages/br_test.usda`), `--mode inject|live|arsim`, `--log`
 (default: `kit_check.log` in the current folder). Each has an environment
 variable fallback: `FIXCHECK_KIT_ROOT`, `FIXCHECK_EXTS`,
 `FIXCHECK_BRIDGE_EXTS`, `FIXCHECK_STAGE`, `FIXCHECK_MODE`, `FIXCHECK_LOG`.
@@ -73,9 +74,18 @@ forces the exit after 15 s. The launchers exit 0 on `OK`.
 
 **Live mode runs against the mock OMJSON server** from
 `br_bridge/tests/mock_omjson.py` (or `FIXCHECK_BR_TESTS`), started in-process;
-both prims' ports are pointed at it through the options setter. It is not an
-ARsim run: the repo's `test/AS Project` is Automation Studio 4.10, and running
-it in ARsim needs that version (or the project converted to AS6).
+both prims' ports are pointed at it through the options setter.
+
+**ARsim mode** (`-Mode arsim`, `--mode arsim`) starts no mock: both prims
+connect to the host and port in the stage, `127.0.0.1:8000`, which is
+`test/AS Project` running in ARsim (see its README). The checks are the same,
+except that the PLC's values are live: `counter2` is any integer rather than the
+mock's 8, and before the writes the check stops TestProg's counters
+(`TestProg:counterOn = FALSE`) so every write is proven by reading the value
+back (`lreal`, `counter = 42`, `counter2 = 99`), not only by the acknowledgement:
+OMJSON acknowledges a write to any symbol, known or not. Afterwards, also
+after an exception, it sets `counterOn` back to TRUE and restores
+`TestProg:lreal`. `TestProg:counter` counts on from 42.
 
 ## Kit tests
 

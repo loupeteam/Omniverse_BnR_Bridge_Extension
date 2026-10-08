@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<?AutomationStudio FileVersion="4.9"?>
+<Library Version="1.1.1" SubType="ANSIC" xmlns="http://br-automation.co.at/AS/Library">
+  <Objects>
+    <Object Type="File" Description="Exported data types">StringExt.typ</Object>
+    <Object Type="File" Description="Exported constants">StringExt.var</Object>
+    <Object Type="File" Description="Exported functions and function blocks">StringExt.fun</Object>
+    <Object Type="File" Description="Strips the leading characters from a string">lstrip.c</Object>
+    <Object Type="File" Description="Strips the trailing characters from a string">rstrip.c</Object>
+    <Object Type="File" Description="Converts a string to a UDINT value, allowing values greater than the DINT maximum">atoui.c</Object>
+    <Object Type="File" Description="Convert a UDINT to a string">uitoa.c</Object>
+    <Object Type="File" Description="Converts a section of bytes to a hex string">ByteToHexString.c</Object>
+    <Object Type="File" Description="Generate a time stamp string from a DATE_AND_TIME variable">GenerateTimestamp.c</Object>
+    <Object Type="File" Description="Generate a time stamp string from a DTStructure">GenerateTimestampMS.c</Object>
+    <Object Type="File" Description="Combine strings pSource1 through pSource4 into pDest, with ' / ' between source strings">strncat4.c</Object>
+    <Object Type="File" Description="Converts a string to upper case">toupper.c</Object>
+    <Object Type="File" Description="Converts a string to lower case">tolower.c</Object>
+    <Object Type="File" Description="Converts output of GenerateTimestamp to DATE_AND_TIME">Timestamp_TO_DT.c</Object>
+    <Object Type="File" Description="Appends an Array Index to a string">appendArrayIndex.c</Object>
+    <Object Type="File">HexStringToDINT.c</Object>
+    <Object Type="File" Description="Parses a hex string into a UDINT">HexStringToUDINT.c</Object>
+    <Object Type="File" Description="Formats a UDINT as a hex string">UDINTToHexString.c</Object>
+    <Object Type="File">SplitFileName.c</Object>
+    <Object Type="File" Description="String copy with max length">stringlcpy.c</Object>
+    <Object Type="File" Description="String cat with max length">stringlcat.c</Object>
+    <Object Type="File" Description="String &lt;-&gt; WString">stringConvert.c</Object>
+    <Object Type="File" Description="Formats a string similar to printf">FormatString.c</Object>
+    <Object Type="File" Description="Time formatting/parsing functions">time.cpp</Object>
+    <Object Type="File" Description="dtoa and similar functions">stringdtoa.c</Object>
+    <Object Type="File" Description="Declare heap size">bur_heap_size.c</Object>
+    <Object Type="File" Description="Header for internal functions">internal.h</Object>
+    <Object Type="File" Description="Internal functions">internal.c</Object>
+    <Object Type="Package" Description="gdtoa library">gdtoa</Object>
+  </Objects>
+  <Dependencies>
+    <Dependency ObjectName="astime" />
+    <Dependency ObjectName="AsBrStr" />
+    <Dependency ObjectName="AsBrWStr" />
+  </Dependencies>
+</Library>

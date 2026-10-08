@@ -37,4 +37,15 @@ TYPE
 		errorCounter : UDINT; (*counts errors, e.g. connection errors, aborts *)
 		lastError : UDINT; (*error number, if any*)
 	END_STRUCT;
+
+	AsHttpCipherVersionEnum :  
+		(
+			asHTTP_TLS_1_3 := 2				(*TLS 1.3*) (**) (*#PAR*)
+		);
+		
+	AsHttpMcsType : STRUCT	
+		name				: STRING[255]; 				(*Managed Certificate Store name*)
+		tlsVersion          : AsHttpCipherVersionEnum; 	(*TLS version*)
+		trustListValidation : BOOL;						(*Enables/disables trust list validation*)
+	END_STRUCT;
 END_TYPE

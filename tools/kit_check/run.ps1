@@ -10,6 +10,9 @@ by design: the script quits the app itself and os._exit(7)s if a dirty stage
 keeps it alive. This script exits 0 when the log holds
 "OK -- all fix checks passed", 1 otherwise.
 
+-Mode arsim runs against test/AS Project in ARsim (the stage's
+127.0.0.1:8000) instead of the mock OMJSON server.
+
 Every parameter can come from the environment instead: FIXCHECK_KIT_ROOT,
 FIXCHECK_EXTS, FIXCHECK_BRIDGE_EXTS, FIXCHECK_STAGE, FIXCHECK_MODE, FIXCHECK_LOG.
 
@@ -26,8 +29,9 @@ param(
     [string]$BridgeExts = $env:FIXCHECK_BRIDGE_EXTS,
     # Stage to open (default: stages\br_test.usda next to this script).
     [string]$Stage = $env:FIXCHECK_STAGE,
-    # "inject" = synthetic data, no PLC; "live" = the PLC named in the stage.
-    [ValidateSet("", "inject", "live")]
+    # "inject" = synthetic data, no PLC; "live" = a mock OMJSON server;
+    # "arsim" = the PLC named in the stage (test/AS Project running in ARsim).
+    [ValidateSet("", "inject", "live", "arsim")]
     [string]$Mode = $env:FIXCHECK_MODE,
     # Where to keep Kit's output.
     [string]$Log = $env:FIXCHECK_LOG

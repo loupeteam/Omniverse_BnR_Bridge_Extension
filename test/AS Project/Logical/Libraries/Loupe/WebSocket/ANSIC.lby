@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<?AutomationStudio FileVersion="4.9"?>
+<Library Version="1.0.0" SubType="ANSIC" xmlns="http://br-automation.co.at/AS/Library">
+  <Files>
+    <File>README.md</File>
+    <File>LICENSE.txt</File>
+    <File>Types.typ</File>
+    <File Description="Exported data types">WSMgr.typ</File>
+    <File Description="Exported data types">WSStream.typ</File>
+    <File Description="Exported constants">Constants.var</File>
+    <File Description="Exported functions and function blocks">WebSocket.fun</File>
+    <File>WSConnection.c</File>
+    <File>WSStream.c</File>
+    <File>WSConnect.c</File>
+    <File>WSEncode.c</File>
+    <File>WSDecode.c</File>
+    <File Description="Internal: Set error status on a jsonWebSocketServer FUB instance">WSUtility.c</File>
+    <File>sha1.h</File>
+    <File>sha1.c</File>
+    <File>internal.h</File>
+    <File Description="Internal: Set error status on a jsonWebSocketServer FUB instance">internalSetWSServerError.c</File>
+    <File>heap.cpp</File>
+  </Files>
+  <Dependencies>
+    <Dependency ObjectName="TCPComm" FromVersion="1.0.0" />
+    <Dependency ObjectName="StringExt" FromVersion="1.0.0" />
+    <Dependency ObjectName="AsHttp" />
+    <Dependency ObjectName="sys_lib" />
+  </Dependencies>
+</Library>
