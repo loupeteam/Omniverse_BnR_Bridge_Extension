@@ -41,6 +41,9 @@ class MockOmjson:
                     # unknown symbols are simply left out, like a real server
                 await websocket.send(json.dumps({"type": "readresponse", "data": data}))
             elif request["type"] == "write":
+                # Like OMJSON 2.0.0: the request is echoed, unknown symbols
+                # included. "undef*" answers "undefined" so the driver's
+                # handling of that reply stays tested.
                 data = {}
                 for symbol, value in request["data"].items():
                     if symbol in self.variables:
@@ -48,6 +51,8 @@ class MockOmjson:
                         data[symbol] = value
                     elif symbol.startswith("undef"):
                         data[symbol] = UNDEFINED
+                    else:
+                        data[symbol] = value
                 await websocket.send(json.dumps({"type": "writeresponse", "data": data}))
 
     def start(self):

@@ -13,7 +13,12 @@
     <- {"type": "readresponse",  "data": [{"globalVar": 25}, {"myTask:localVar": {...}}]}
     -> {"type": "write", "data": {"globalVar": 52}}
     <- {"type": "writeresponse", "data": {"globalVar": 52}}
-  A symbol the PLC does not know, or cannot represent, comes back as "undefined".
+  A symbol the PLC does not know, or cannot represent, comes back as "undefined"
+  in a readresponse. A writeresponse does not say so: OMJSON 2.0.0 echoes the
+  request, unknown symbols included, so a write to a symbol that does not exist
+  looks written. The driver flags such a write only when the symbol's most
+  recent read failed. A write the server cannot parse gets no reply at all, so
+  it times out and the link is reported lost.
 """
 
 import asyncio
@@ -61,6 +66,8 @@ class BrDriver(PlcDriver):
         self._loop_thread: Optional[threading.Thread] = None
         self._request_lock = threading.Lock()
         self._transport_lost = False
+        # Why each symbol's most recent read failed; a later good read clears it.
+        self._read_errors = {}
 
     # region - Event loop
 
@@ -170,6 +177,8 @@ class BrDriver(PlcDriver):
                 result.errors[symbol] = UNDEFINED
             else:
                 result.values[symbol] = returned[symbol]
+                self._read_errors.pop(symbol, None)
+        self._read_errors.update(result.errors)
         return result
 
     def write(self, values: Mapping[str, Any]) -> Mapping[str, str]:
@@ -184,6 +193,9 @@ class BrDriver(PlcDriver):
                 errors[symbol] = NOT_IN_RESPONSE
             elif returned[symbol] == UNDEFINED:
                 errors[symbol] = UNDEFINED
+            elif symbol in self._read_errors:
+                # OMJSON echoes unknown symbols as written; the last read knows better.
+                errors[symbol] = f"{self._read_errors[symbol]} on the last read"
         return errors
 
     # endregion
