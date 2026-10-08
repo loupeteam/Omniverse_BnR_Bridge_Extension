@@ -15,88 +15,11 @@ extern "C"
 #ifndef _BUR_PUBLIC
 #define _BUR_PUBLIC
 #endif
-/* Constants */
-#ifdef _REPLACE_CONST
- #define httpPHASE_WAITING 4U
- #define httpPHASE_RECEIVED 3U
- #define httpPHASE_RECEIVING 2U
- #define httpPHASE_SENDING 1U
- #define httpPHASE_NOT_CONNECTED 0U
- #define httpOPTION_SERVICE_TYPE_LEAF 8U
- #define httpOPTION_SERVICE_TYPE_EXT 6U
- #define httpOPTION_SERVICE_TYPE_NAME 2U
- #define httpOPTION_SERVICE_TYPE_ROOT 4U
- #define httpOPTION_HTTP_11 1U
- #define httpOPTION_HTTP_10 0U
- #define httpMETHOD_DELETE 4U
- #define httpMETHOD_PUT 3U
- #define httpMETHOD_POST 2U
- #define httpMETHOD_GET 1U
- #define httpERR_SYSTEM 35579U
- #define httpERR_INVALID_SSL_CONFIG 35568U
- #define httpERR_SSL_HANDSHAKE_FAILED 35567U
- #define httpERR_ILLEGAL_CHARACTERS 35566U
- #define httpERR_NOT_FOUND 35565U
- #define httpERR_CLIENT_TCP_DISCONNECTED 35564U
- #define httpERR_CLIENT_TCP_INVALID_HOST 35563U
- #define httpERR_CLIENT_TCP_CONN_FAILED 35562U
- #define httpERR_CLIENT_TCP_CONN_CLOSED 35561U
- #define httpERR_CLIENT_NO_MORE_IDENTS 35560U
- #define httpERR_CLIENT_ERR_SOCKET_CREATE 35559U
- #define httpERR_SERVICE_LINK_FAILED 35558U
- #define httpERR_SERVICE_NO_WEBSERVER 35557U
- #define httpERR_METHOD_UNSUPPORTED 35556U
- #define httpERR_NO_DATA 35555U
- #define httpERR_INVALID_PARAM 35554U
- #define httpERR_HEADER_SIZE_USERLINE 35553U
- #define httpERR_HEADER_SIZE_RAW 35552U
- #define httpERR_DATA_SIZE 35551U
- #define httpERR_BUFFER_SIZE 35550U
-#else
- #ifndef _GLOBAL_CONST
-   #define _GLOBAL_CONST _WEAK const
- #endif
- _GLOBAL_CONST unsigned short httpPHASE_WAITING;
- _GLOBAL_CONST unsigned short httpPHASE_RECEIVED;
- _GLOBAL_CONST unsigned short httpPHASE_RECEIVING;
- _GLOBAL_CONST unsigned short httpPHASE_SENDING;
- _GLOBAL_CONST unsigned short httpPHASE_NOT_CONNECTED;
- _GLOBAL_CONST unsigned short httpOPTION_SERVICE_TYPE_LEAF;
- _GLOBAL_CONST unsigned short httpOPTION_SERVICE_TYPE_EXT;
- _GLOBAL_CONST unsigned short httpOPTION_SERVICE_TYPE_NAME;
- _GLOBAL_CONST unsigned short httpOPTION_SERVICE_TYPE_ROOT;
- _GLOBAL_CONST unsigned short httpOPTION_HTTP_11;
- _GLOBAL_CONST unsigned short httpOPTION_HTTP_10;
- _GLOBAL_CONST unsigned short httpMETHOD_DELETE;
- _GLOBAL_CONST unsigned short httpMETHOD_PUT;
- _GLOBAL_CONST unsigned short httpMETHOD_POST;
- _GLOBAL_CONST unsigned short httpMETHOD_GET;
- _GLOBAL_CONST unsigned short httpERR_SYSTEM;
- _GLOBAL_CONST unsigned short httpERR_INVALID_SSL_CONFIG;
- _GLOBAL_CONST unsigned short httpERR_SSL_HANDSHAKE_FAILED;
- _GLOBAL_CONST unsigned short httpERR_ILLEGAL_CHARACTERS;
- _GLOBAL_CONST unsigned short httpERR_NOT_FOUND;
- _GLOBAL_CONST unsigned short httpERR_CLIENT_TCP_DISCONNECTED;
- _GLOBAL_CONST unsigned short httpERR_CLIENT_TCP_INVALID_HOST;
- _GLOBAL_CONST unsigned short httpERR_CLIENT_TCP_CONN_FAILED;
- _GLOBAL_CONST unsigned short httpERR_CLIENT_TCP_CONN_CLOSED;
- _GLOBAL_CONST unsigned short httpERR_CLIENT_NO_MORE_IDENTS;
- _GLOBAL_CONST unsigned short httpERR_CLIENT_ERR_SOCKET_CREATE;
- _GLOBAL_CONST unsigned short httpERR_SERVICE_LINK_FAILED;
- _GLOBAL_CONST unsigned short httpERR_SERVICE_NO_WEBSERVER;
- _GLOBAL_CONST unsigned short httpERR_METHOD_UNSUPPORTED;
- _GLOBAL_CONST unsigned short httpERR_NO_DATA;
- _GLOBAL_CONST unsigned short httpERR_INVALID_PARAM;
- _GLOBAL_CONST unsigned short httpERR_HEADER_SIZE_USERLINE;
- _GLOBAL_CONST unsigned short httpERR_HEADER_SIZE_RAW;
- _GLOBAL_CONST unsigned short httpERR_DATA_SIZE;
- _GLOBAL_CONST unsigned short httpERR_BUFFER_SIZE;
-#endif
-
-
-
-
 /* Datatypes and datatypes of function blocks */
+typedef enum AsHttpCipherVersionEnum
+{	asHTTP_TLS_1_3 = 2
+} AsHttpCipherVersionEnum;
+
 typedef struct httpHeaderLine_t
 {	plcstring name[51];
 	plcstring value[81];
@@ -138,6 +61,12 @@ typedef struct httpStatistics_t
 	unsigned long errorCounter;
 	unsigned long lastError;
 } httpStatistics_t;
+
+typedef struct AsHttpMcsType
+{	plcstring name[256];
+	enum AsHttpCipherVersionEnum tlsVersion;
+	plcbit trustListValidation;
+} AsHttpMcsType;
 
 typedef struct httpService
 {
@@ -283,6 +212,44 @@ typedef struct httpsClient
 	plcbit send;
 	plcbit abort;
 } httpsClient_typ;
+
+typedef struct httpsClientMcs
+{
+	/* VAR_INPUT (analog) */
+	unsigned long option;
+	struct AsHttpMcsType mcsStore;
+	unsigned long pHost;
+	unsigned short hostPort;
+	unsigned long method;
+	unsigned long pUri;
+	unsigned long pRequestHeader;
+	unsigned long pRequestData;
+	unsigned long requestDataLen;
+	unsigned long pResponseHeader;
+	unsigned long pResponseData;
+	unsigned long responseDataSize;
+	unsigned long pStatistics;
+	unsigned long pStruct;
+	/* VAR_OUTPUT (analog) */
+	unsigned short status;
+	unsigned short tcpStatus;
+	unsigned short httpStatus;
+	unsigned long responseDataLen;
+	unsigned short phase;
+	/* VAR (analog) */
+	unsigned long _i_state;
+	unsigned short _i_result;
+	unsigned long _ident;
+	unsigned long _oldEnable;
+	unsigned long _oldAbort;
+	unsigned long _oldSend;
+	unsigned long _state;
+	unsigned long _internal;
+	/* VAR_INPUT (digital) */
+	plcbit enable;
+	plcbit send;
+	plcbit abort;
+} httpsClientMcs_typ;
 
 typedef struct httpUtf8ToString
 {
@@ -488,6 +455,7 @@ _BUR_PUBLIC void httpService(struct httpService* inst);
 _BUR_PUBLIC void httpClient(struct httpClient* inst);
 _BUR_PUBLIC void httpsService(struct httpsService* inst);
 _BUR_PUBLIC void httpsClient(struct httpsClient* inst);
+_BUR_PUBLIC void httpsClientMcs(struct httpsClientMcs* inst);
 _BUR_PUBLIC void httpUtf8ToString(struct httpUtf8ToString* inst);
 _BUR_PUBLIC void httpStringToUtf8(struct httpStringToUtf8* inst);
 _BUR_PUBLIC void httpUtf8ToWString(struct httpUtf8ToWString* inst);
@@ -502,6 +470,86 @@ _BUR_PUBLIC void httpSetBoundary(struct httpSetBoundary* inst);
 _BUR_PUBLIC void httpGetBoundary(struct httpGetBoundary* inst);
 _BUR_PUBLIC void httpSetMultipartMessage(struct httpSetMultipartMessage* inst);
 _BUR_PUBLIC void httpGetMultipartMessage(struct httpGetMultipartMessage* inst);
+
+
+/* Constants */
+#ifdef _REPLACE_CONST
+ #define httpPHASE_WAITING 4U
+ #define httpPHASE_RECEIVED 3U
+ #define httpPHASE_RECEIVING 2U
+ #define httpPHASE_SENDING 1U
+ #define httpPHASE_NOT_CONNECTED 0U
+ #define httpOPTION_SERVICE_TYPE_LEAF 8U
+ #define httpOPTION_SERVICE_TYPE_EXT 6U
+ #define httpOPTION_SERVICE_TYPE_NAME 2U
+ #define httpOPTION_SERVICE_TYPE_ROOT 4U
+ #define httpOPTION_HTTP_11 1U
+ #define httpOPTION_HTTP_10 0U
+ #define httpMETHOD_DELETE 4U
+ #define httpMETHOD_PUT 3U
+ #define httpMETHOD_POST 2U
+ #define httpMETHOD_GET 1U
+ #define httpERR_SYSTEM 35579U
+ #define httpERR_INVALID_MCS_CONFIG 35569U
+ #define httpERR_INVALID_SSL_CONFIG 35568U
+ #define httpERR_SSL_HANDSHAKE_FAILED 35567U
+ #define httpERR_ILLEGAL_CHARACTERS 35566U
+ #define httpERR_NOT_FOUND 35565U
+ #define httpERR_CLIENT_TCP_DISCONNECTED 35564U
+ #define httpERR_CLIENT_TCP_INVALID_HOST 35563U
+ #define httpERR_CLIENT_TCP_CONN_FAILED 35562U
+ #define httpERR_CLIENT_TCP_CONN_CLOSED 35561U
+ #define httpERR_CLIENT_NO_MORE_IDENTS 35560U
+ #define httpERR_CLIENT_ERR_SOCKET_CREATE 35559U
+ #define httpERR_SERVICE_LINK_FAILED 35558U
+ #define httpERR_SERVICE_NO_WEBSERVER 35557U
+ #define httpERR_METHOD_UNSUPPORTED 35556U
+ #define httpERR_NO_DATA 35555U
+ #define httpERR_INVALID_PARAM 35554U
+ #define httpERR_HEADER_SIZE_USERLINE 35553U
+ #define httpERR_HEADER_SIZE_RAW 35552U
+ #define httpERR_DATA_SIZE 35551U
+ #define httpERR_BUFFER_SIZE 35550U
+#else
+ _GLOBAL_CONST unsigned short httpPHASE_WAITING;
+ _GLOBAL_CONST unsigned short httpPHASE_RECEIVED;
+ _GLOBAL_CONST unsigned short httpPHASE_RECEIVING;
+ _GLOBAL_CONST unsigned short httpPHASE_SENDING;
+ _GLOBAL_CONST unsigned short httpPHASE_NOT_CONNECTED;
+ _GLOBAL_CONST unsigned short httpOPTION_SERVICE_TYPE_LEAF;
+ _GLOBAL_CONST unsigned short httpOPTION_SERVICE_TYPE_EXT;
+ _GLOBAL_CONST unsigned short httpOPTION_SERVICE_TYPE_NAME;
+ _GLOBAL_CONST unsigned short httpOPTION_SERVICE_TYPE_ROOT;
+ _GLOBAL_CONST unsigned short httpOPTION_HTTP_11;
+ _GLOBAL_CONST unsigned short httpOPTION_HTTP_10;
+ _GLOBAL_CONST unsigned short httpMETHOD_DELETE;
+ _GLOBAL_CONST unsigned short httpMETHOD_PUT;
+ _GLOBAL_CONST unsigned short httpMETHOD_POST;
+ _GLOBAL_CONST unsigned short httpMETHOD_GET;
+ _GLOBAL_CONST unsigned short httpERR_SYSTEM;
+ _GLOBAL_CONST unsigned short httpERR_INVALID_MCS_CONFIG;
+ _GLOBAL_CONST unsigned short httpERR_INVALID_SSL_CONFIG;
+ _GLOBAL_CONST unsigned short httpERR_SSL_HANDSHAKE_FAILED;
+ _GLOBAL_CONST unsigned short httpERR_ILLEGAL_CHARACTERS;
+ _GLOBAL_CONST unsigned short httpERR_NOT_FOUND;
+ _GLOBAL_CONST unsigned short httpERR_CLIENT_TCP_DISCONNECTED;
+ _GLOBAL_CONST unsigned short httpERR_CLIENT_TCP_INVALID_HOST;
+ _GLOBAL_CONST unsigned short httpERR_CLIENT_TCP_CONN_FAILED;
+ _GLOBAL_CONST unsigned short httpERR_CLIENT_TCP_CONN_CLOSED;
+ _GLOBAL_CONST unsigned short httpERR_CLIENT_NO_MORE_IDENTS;
+ _GLOBAL_CONST unsigned short httpERR_CLIENT_ERR_SOCKET_CREATE;
+ _GLOBAL_CONST unsigned short httpERR_SERVICE_LINK_FAILED;
+ _GLOBAL_CONST unsigned short httpERR_SERVICE_NO_WEBSERVER;
+ _GLOBAL_CONST unsigned short httpERR_METHOD_UNSUPPORTED;
+ _GLOBAL_CONST unsigned short httpERR_NO_DATA;
+ _GLOBAL_CONST unsigned short httpERR_INVALID_PARAM;
+ _GLOBAL_CONST unsigned short httpERR_HEADER_SIZE_USERLINE;
+ _GLOBAL_CONST unsigned short httpERR_HEADER_SIZE_RAW;
+ _GLOBAL_CONST unsigned short httpERR_DATA_SIZE;
+ _GLOBAL_CONST unsigned short httpERR_BUFFER_SIZE;
+#endif
+
+
 
 
 #ifdef __cplusplus

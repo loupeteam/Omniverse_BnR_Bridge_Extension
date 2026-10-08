@@ -150,6 +150,46 @@ END_FUNCTION_BLOCK
 	END_VAR
 END_FUNCTION_BLOCK
 
+{REDUND_CONTEXT} {REDUND_UNREPLICABLE} FUNCTION_BLOCK httpsClientMcs (*sends and recieves HTTPs messages using MCS (web requests); asynchronous execution*)
+	VAR_INPUT
+		enable : BOOL; (*enables execution; asynchronous execution*)
+		send : BOOL; (*sends request data on positive edge*)
+		abort : BOOL; (*disconnects and resets client state on positive edge*)
+		option : UDINT; (*options, e.g protocol version (HTTP1.0 / 1.1)*)
+		mcsStore : AsHttpMcsType;	(*Managed Certificate Store Struct*)
+		pHost : UDINT; (*host name or ip of server to connect to given as a pointer*)
+		hostPort : UINT; (*port number of server to connect to*)
+		method : UDINT; (*request method see httpMETHOD_XXX*)
+		pUri : UDINT; (*request uri given as a pointer, e.g. "/index.html" or "/hello.cgi?name=myName"*)
+		pRequestHeader : UDINT; (*pointer to httpRequestHeader_t, optional*)
+		pRequestData : UDINT; (*pointer to request data, typically string data*)
+		requestDataLen : UDINT; (*length of request data*)
+		pResponseHeader : UDINT; (*pointer to httpResponseHeader_t, optional*)
+		pResponseData : UDINT; (*pointer to response data buffer, typically string data*)
+		responseDataSize : UDINT; (*size of response data buffer*)
+		pStatistics : UDINT; (*pointer to httpStatistics_t, optional*)
+		pStruct : UDINT; (*reserve*)
+	END_VAR
+	VAR_OUTPUT
+		status : UINT; (*execution status: ERR_OK, ERR_FUB_ENABLE_FALSE, ERR_FUB_BUSY,
+0xXXXX = see help*)
+		tcpStatus : UINT; (*status of the tls connection (tcp and tls)*)
+		httpStatus : UINT; (*status code of response, e.g. 200 for "OK", 404 for "Not Found"*)
+		responseDataLen : UDINT; (*length of response (bytes)*)
+		phase : UINT; (*current phase of request response handling of the webservice, see httpPHASE_XXX*)
+	END_VAR
+	VAR
+		_i_state : UDINT; (*internal variable*)
+		_i_result : UINT; (*internal variable*)
+		_ident : UDINT; (*internal variable*)
+		_oldEnable : UDINT; (*internal variable*)
+		_oldAbort : UDINT; (*internal variable*)
+		_oldSend : UDINT; (*internal variable*)
+		_state : UDINT; (*internal variable*)
+		_internal : UDINT; (*internal variable*)
+	END_VAR
+END_FUNCTION_BLOCK
+
 {REDUND_CONTEXT} {REDUND_UNREPLICABLE} FUNCTION_BLOCK httpUtf8ToString (*converts a UTF8 string in string with respect to given code page mapping*)
 	VAR_INPUT
 		enable : BOOL; (*enables execution*)

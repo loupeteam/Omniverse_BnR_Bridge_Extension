@@ -18,6 +18,7 @@ VAR CONSTANT
 	httpERR_ILLEGAL_CHARACTERS : UINT := 35566; (*source contains characters, that couldn't be transformd*)
 	httpERR_SSL_HANDSHAKE_FAILED : UINT := 35567; (*client handshake failed*)
 	httpERR_INVALID_SSL_CONFIG : UINT := 35568; (*Could not open ssl configuration*)
+	httpERR_INVALID_MCS_CONFIG : UINT := 35569;	(*invalid MCS configuration given*)
 	httpERR_SYSTEM : UINT := 35579; (*general error, see help*)
 	httpMETHOD_GET : UINT := 1; (*request method GET, additional request parameters are part of the URL*)
 	httpMETHOD_POST : UINT := 2; (*request method POST, request contains a message body*)

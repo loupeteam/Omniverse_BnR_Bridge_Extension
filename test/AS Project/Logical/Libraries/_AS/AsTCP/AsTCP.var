@@ -19,7 +19,8 @@ VAR CONSTANT
 	tcpERR_SOCKET_BIND					: UINT := 32651;	(*bind socket failed*)
 	tcpERR_SOCKET_LISTEN				: UINT := 32652;	(*listen socket failed*)
 	tcpERR_SOCKET_ACCEPT				: UINT := 32653;	(*accept socket failed*)
-	
+
+	tcpERR_INVALID_MCS_CONFIG			: UINT := 32696;	(*invalid MCS configuration given*)
 	tcpERR_INVALID_SSL_CONFIG			: UINT := 32697;	(*invalid SSL configuration given*)
 	tcpERR_SSL_HANDSHAKE_FAILED			: UINT := 32698;	(*SSL handshake failed*)
 	
