@@ -22,6 +22,7 @@
 """
 
 import asyncio
+import concurrent.futures
 import json
 import logging
 import threading
@@ -30,6 +31,10 @@ from typing import Any, Mapping, Optional, Sequence
 import websockets
 
 from plc_bridge import PlcDriver, ReadResult
+
+# Before Python 3.11 the concurrent.futures and asyncio timeouts are not the
+# builtin TimeoutError; _call turns all three into the builtin one.
+_TIMEOUTS = (TimeoutError, asyncio.TimeoutError, concurrent.futures.TimeoutError)
 
 logger = logging.getLogger(__name__)
 
@@ -93,10 +98,7 @@ class BrDriver(PlcDriver):
         future = asyncio.run_coroutine_threadsafe(coro, self._ensure_loop())
         try:
             return future.result(self.timeout if timeout is None else timeout)
-        except TimeoutError:
-            future.cancel()
-            raise TimeoutError(f"OMJSON at {self.host}:{self.port}: no reply within {self.timeout}s")
-        except asyncio.TimeoutError:
+        except _TIMEOUTS:
             future.cancel()
             raise TimeoutError(f"OMJSON at {self.host}:{self.port}: no reply within {self.timeout}s")
 
