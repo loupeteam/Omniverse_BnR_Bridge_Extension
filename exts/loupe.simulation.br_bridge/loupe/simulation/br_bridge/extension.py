@@ -21,6 +21,8 @@ and accepts the `loupe.simulation.br_bridge.*` bus names. Its window builds a
 field per option from the schema below, so no UI panel is registered.
 """
 
+import sys
+
 import omni.ext
 from br_bridge import BrDriver
 from loupe.simulation.bridge import Option, registry
@@ -29,10 +31,7 @@ DRIVER_NAME = "br"
 LEGACY_NAMESPACE = "br_bridge"
 TITLE = "B&R (OMJSON)"
 
-OPTIONS = [
-    Option("Host", "str", "127.0.0.1", "PLC IP Address"),
-    Option("Port", "int", 8000, "PLC Port"),
-]
+OPTIONS = [Option("Host", "str", "127.0.0.1", "PLC IP Address"), Option("Port", "int", 8000, "PLC Port")]
 
 
 class Extension(omni.ext.IExt):
@@ -40,6 +39,9 @@ class Extension(omni.ext.IExt):
         registry.register(DRIVER_NAME, BrDriver, OPTIONS, legacy_namespace=LEGACY_NAMESPACE, title=TITLE)
 
     def on_shutdown(self):
+        compat = sys.modules.get(__package__ + ".BrBridge")
+        if compat is not None:
+            compat._release()  # stop keeping a no-name Manager()'s PLC1 alive
         # Only our own entry: leave a driver someone else registered under the name.
         spec = registry.get(DRIVER_NAME)
         if spec is not None and spec.driver_class is BrDriver:
