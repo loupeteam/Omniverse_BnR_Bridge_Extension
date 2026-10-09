@@ -19,8 +19,7 @@ import carb.settings
 import omni.kit.app
 from loupe.simulation.bridge import Manager as _Manager
 from loupe.simulation.bridge import Manager_Events as _ManagerEvents
-from loupe.simulation.bridge import get_system, registry
-from loupe.simulation.bridge.bus import BUS_NAMESPACE, get_stream_name, legacy_bus_names_enabled  # noqa: F401
+from loupe.simulation.bridge import BUS_NAMESPACE, get_stream_name, get_system, legacy_bus_names_enabled, registry  # noqa: F401
 
 from .extension import DRIVER_NAME, LEGACY_NAMESPACE
 
