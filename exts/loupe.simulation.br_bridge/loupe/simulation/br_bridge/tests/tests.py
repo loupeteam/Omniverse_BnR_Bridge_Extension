@@ -42,6 +42,16 @@ class TestBrExtension(omni.kit.test.AsyncTestCase):
         driver = spec.create_driver({"Host": "10.0.0.2", "Port": "8001"})
         self.assertEqual((driver.host, driver.port), ("10.0.0.2", 8001))
 
+    async def test_pinned_library_versions_match(self):
+        import omni.kit.app
+        from loupe.simulation.bridge import check_extension_requirements
+
+        manager = omni.kit.app.get_app().get_extension_manager()
+        ext_id = manager.get_enabled_extension_id("loupe.simulation.br_bridge")
+        logged = []
+        self.assertEqual(check_extension_requirements(ext_id, log=logged.append), [])
+        self.assertEqual(logged, [])
+
     async def test_compat_module(self):
         import importlib
         import sys
