@@ -83,7 +83,7 @@ The vendor-named surfaces are a one-release alias. Each logs a deprecation warni
 
 | Old surface | 0.3 | 0.4 | 0.5 |
 |---|---|---|---|
-| `from loupe.simulation.br_bridge import BrBridge` (`Manager`, `get_system`, `EVENT_TYPE_*`) | works, `DeprecationWarning` at import | module still there, but its bus names are off by default | removed |
+| `from loupe.simulation.br_bridge import BrBridge` (`Manager`, `get_system`, `EVENT_TYPE_*`) | works, `DeprecationWarning` at import | still there, `DeprecationWarning` at import; its `Manager` talks on the neutral names unless `legacyBusNames` is turned back on | removed |
 | Bus names `loupe.simulation.br_bridge.<KIND>.<plc>` | pushed and accepted next to the neutral names | only with the framework setting `/exts/loupe.simulation.bridge/legacyBusNames = true` | removed |
 | Prim attributes `br_bridge:*` without `bridge:driver` | read, warned once per prim | only behind a setting | removed |
 | `BrBridge.Manager()` with no name | works, warns | removed (announced in 0.3.0rc1) | |
