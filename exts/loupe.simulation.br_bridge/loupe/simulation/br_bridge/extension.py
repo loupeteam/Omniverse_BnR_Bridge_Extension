@@ -25,7 +25,7 @@ import sys
 
 import omni.ext
 from br_bridge import BrDriver
-from loupe.simulation.bridge import Option, registry
+from loupe.simulation.bridge import Option, check_extension_requirements, registry
 
 DRIVER_NAME = "br"
 LEGACY_NAMESPACE = "br_bridge"
@@ -36,6 +36,9 @@ OPTIONS = [Option("Host", "str", "127.0.0.1", "PLC IP Address"), Option("Port", 
 
 class Extension(omni.ext.IExt):
     def on_startup(self, ext_id: str):
+        # Kit's pip installer only checks that br_bridge imports; log an error
+        # when the one it found is not the version this extension pins.
+        check_extension_requirements(ext_id)
         registry.register(DRIVER_NAME, BrDriver, OPTIONS, legacy_namespace=LEGACY_NAMESPACE, title=TITLE)
 
     def on_shutdown(self):
