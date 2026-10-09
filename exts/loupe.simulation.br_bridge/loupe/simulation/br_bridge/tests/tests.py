@@ -57,6 +57,27 @@ class TestBrExtension(omni.kit.test.AsyncTestCase):
         self.assertIs(BrBridge.get_system, get_system)
         self.assertTrue(issubclass(BrBridge.Manager, Manager))
 
+    async def test_manager_follows_the_legacy_bus_setting(self):
+        import carb.settings
+        from loupe.simulation.br_bridge import BrBridge
+
+        setting = "/exts/loupe.simulation.bridge/legacyBusNames"
+        settings = carb.settings.get_settings()
+        old = settings.get(setting)
+        try:
+            settings.set(setting, True)
+            manager = BrBridge.Manager("PLC1")
+            self.assertEqual(manager._events.EVENT_TYPE_DATA_READ, "loupe.simulation.br_bridge.DATA_READ")
+            manager.cleanup()
+            settings.set(setting, False)
+            manager = BrBridge.Manager("PLC1")
+            self.assertEqual(manager._events.EVENT_TYPE_DATA_READ, "loupe.simulation.bridge.DATA_READ")
+            manager.cleanup()
+            # The constants stay the legacy names either way, as in the Beckhoff module.
+            self.assertEqual(BrBridge.EVENT_TYPE_DATA_READ, "loupe.simulation.br_bridge.DATA_READ")
+        finally:
+            settings.set(setting, True if old is None else old)
+
     async def test_no_name_manager_creates_plc1_in_memory(self):
         await omni.usd.get_context().new_stage_async()
         from loupe.simulation.br_bridge import BrBridge

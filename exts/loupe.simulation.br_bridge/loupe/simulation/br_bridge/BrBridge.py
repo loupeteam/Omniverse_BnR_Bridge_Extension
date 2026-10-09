@@ -2,10 +2,14 @@
 Copyright (c) 2024 Loupe, https://loupe.team. Part of Omniverse_BnR_Bridge_Extension, MIT License.
 
 DEPRECATED compatibility module. The script API moved to the framework
-extension `loupe.simulation.bridge`; this module re-exports it on the legacy
-`br_bridge` namespace (events `loupe.simulation.br_bridge.<KIND>.<plc>`) so
-existing scripts run unchanged. 0.3 warns, 0.4 turns those bus names off by
-default (framework setting `legacyBusNames`), 0.5 removes this module.
+extension `loupe.simulation.bridge`; this module re-exports it. Its `Manager`
+talks on the legacy `br_bridge` bus names (events
+`loupe.simulation.br_bridge.<KIND>.<plc>`) while the framework still pushes
+them (setting `/exts/loupe.simulation.bridge/legacyBusNames`, on in 0.3), so
+existing scripts run unchanged; with the setting off it talks on the neutral
+names. The `EVENT_TYPE_*` constants are the legacy names. 0.3 and 0.4 import
+this module with a warning (0.4 turns the legacy bus names off by default);
+0.5 removes it.
 """
 
 import logging
@@ -16,7 +20,7 @@ import omni.kit.app
 from loupe.simulation.bridge import Manager as _Manager
 from loupe.simulation.bridge import Manager_Events as _ManagerEvents
 from loupe.simulation.bridge import get_system, registry
-from loupe.simulation.bridge.bus import get_stream_name  # noqa: F401  re-exported
+from loupe.simulation.bridge.bus import BUS_NAMESPACE, get_stream_name, legacy_bus_names_enabled  # noqa: F401
 
 from .extension import DRIVER_NAME, LEGACY_NAMESPACE
 
@@ -99,7 +103,9 @@ def _release():
 
 class Manager(_Manager):
     """
-    The framework's `Manager` on the legacy bus names. `Manager()` with no name
+    The framework's `Manager` on the legacy bus names while the framework
+    pushes them (`legacyBusNames`), on the neutral names otherwise; a Manager
+    on names nobody pushes would never get data. `Manager()` with no name
     is the 0.1.0 form: DEPRECATED, removed in 0.4.0. It addresses PLC1 and,
     when no such PLC is loaded, keeps one in memory from the 0.1.0 settings.
     """
@@ -114,4 +120,5 @@ class Manager(_Manager):
             system = get_system()
             if _legacy_plc is None and system is not None and system.get_component(Name) is None:
                 _legacy_plc = _LegacyPlc(system)
-        super().__init__(Name, namespace=LEGACY_NAMESPACE)
+        namespace = LEGACY_NAMESPACE if legacy_bus_names_enabled() else BUS_NAMESPACE
+        super().__init__(Name, namespace=namespace)
