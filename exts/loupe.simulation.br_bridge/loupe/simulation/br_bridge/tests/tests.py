@@ -9,12 +9,22 @@ registration and the deprecated BrBridge compatibility module.
 
 import importlib.util
 import os
+import time
 import warnings
 
 import omni.kit.test
 import omni.usd
 
 SETTINGS = "/persistent/loupe.simulation.br_bridge/"
+REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), *[".."] * 6))
+
+
+def _mock_module():
+    """br_bridge/tests/mock_omjson.py from this checkout (not part of the wheel)."""
+    spec = importlib.util.spec_from_file_location("mock_omjson", os.path.join(REPO, "br_bridge", "tests", "mock_omjson.py"))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 class TestBrExtension(omni.kit.test.AsyncTestCase):
@@ -79,11 +89,7 @@ class TestBrExtension(omni.kit.test.AsyncTestCase):
 
         app = omni.kit.app.get_app()
         await omni.usd.get_context().new_stage_async()
-        repo = os.path.abspath(os.path.join(os.path.dirname(__file__), *[".."] * 6))
-        spec = importlib.util.spec_from_file_location("mock_omjson", os.path.join(repo, "br_bridge", "tests", "mock_omjson.py"))
-        mock_module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mock_module)
-        mock = mock_module.MockOmjson({"TestProg:counter": 7}).start()
+        mock = _mock_module().MockOmjson({"TestProg:counter": 7}).start()
         settings = carb.settings.get_settings()
         keys = {"PLC_PORT": mock.port, "ENABLE_COMMUNICATION": True}
         old = {key: settings.get(SETTINGS + key) for key in keys}
@@ -132,3 +138,56 @@ class TestBrExtension(omni.kit.test.AsyncTestCase):
                     settings.destroy_item(SETTINGS + key)
                 else:
                     settings.set(SETTINGS + key, value)
+
+    async def test_stage_close_with_hung_server_does_not_block(self):
+        """
+        Closing a stage whose B&R PLC stopped answering (the server accepts
+        nothing, the worker is stuck in a read) must not stall the main thread
+        for the driver's timeouts.
+        """
+        import omni.kit.app
+        from loupe.simulation.bridge import get_system
+
+        app = omni.kit.app.get_app()
+        context = omni.usd.get_context()
+        await context.new_stage_async()
+        mock = _mock_module().MockOmjson({"TestProg:counter": 7}).start()
+        system = get_system()
+        try:
+            runtime = system.add_component("BR1", {
+                "bridge:driver": "br", "br:Host": "127.0.0.1", "br:Port": mock.port,
+                "bridge:Enable": True, "bridge:RefreshRate": 20,
+                "bridge:Variables": ["TestProg:counter"], "bridge:MirrorToUsd": False})
+            for _ in range(300):
+                if runtime.plc.latest() is not None:
+                    break
+                await app.next_update_async()
+            self.assertIsNotNone(runtime.plc.latest(), "no data from the mock server")
+            # Hang the server's loop: the connection stays open, nothing is read
+            # or answered, so the worker blocks in a read and a close handshake
+            # gets no reply.
+            mock.silent = True
+            mock._loop.call_soon_threadsafe(time.sleep, 8)
+            time.sleep(0.3)
+            # The longest gap between two app updates is how long the main
+            # thread was blocked; the stage event handler runs inside one.
+            ticks = []
+            sub = app.get_update_event_stream().create_subscription_to_pop(
+                lambda _e: ticks.append(time.monotonic()), name="br-close-timing")
+            start = time.monotonic()
+            await context.close_stage_async()
+            while system.get_component_names():
+                await app.next_update_async()
+                self.assertLess(time.monotonic() - start, 30, "the stage close never removed the component")
+            for _ in range(3):
+                await app.next_update_async()
+            sub = None
+            total = time.monotonic() - start
+            stamps = [start] + ticks
+            longest = max(b - a for a, b in zip(stamps, stamps[1:]))
+            print(f"stage close with a hung B&R server: {total:.2f}s until the component was gone, "
+                  f"longest gap between app updates {longest:.2f}s")
+            self.assertLess(longest, 1.0, "closing the stage blocked the main thread")
+        finally:
+            system.remove_component("BR1")
+            mock.stop()
