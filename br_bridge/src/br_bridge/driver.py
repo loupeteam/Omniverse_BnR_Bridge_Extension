@@ -17,7 +17,8 @@
   in a readresponse. A writeresponse does not say so: OMJSON 2.0.0 echoes the
   request, unknown symbols included, so a write to a symbol that does not exist
   looks written. The driver flags such a write only when the symbol's most
-  recent read failed. A write the server cannot parse gets no reply at all, so
+  recent read failed. OMJSON is deprecated upstream and will not be fixed, so
+  this stays a known gap. A write the server cannot parse gets no reply at all, so
   it times out and the link is reported lost.
 """
 

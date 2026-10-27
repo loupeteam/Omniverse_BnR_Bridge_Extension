@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "br-bridge"
-version = "0.3.0rc1"
+version = "0.3.0"
 description = "B&R PLC driver over OMJSON websockets, with no Omniverse dependency"
 readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "Loupe", email = "info@loupe.team" }]
 requires-python = ">=3.10"
-dependencies = ["websockets>=12", "plc-bridge>=0.3.0rc1,<0.4"]
+dependencies = ["websockets>=12", "plc-bridge>=0.3.0,<0.4"]
 keywords = ["B&R", "OMJSON", "PLC", "Automation Runtime"]
 
 [project.optional-dependencies]

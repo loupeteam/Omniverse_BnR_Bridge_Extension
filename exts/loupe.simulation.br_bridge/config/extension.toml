@@ -3,7 +3,7 @@ reloadable = true
 order = 0
 
 [package]
-version = "0.3.0-rc1"
+version = "0.3.0"
 category = "simulation"
 title = "B&R Bridge"
 description = "B&R PLC driver for the loupe.simulation.bridge framework: OMJSON over websockets"
@@ -31,7 +31,7 @@ icon = "data/icon.png"
 # pinned by the framework extension: Kit installs every extension's pip
 # requirements into one site-packages and does not resolve conflicts, so a
 # vendor extension pins only its own library.
-requirements = ["websockets", "br-bridge>=0.3.0rc1,<0.4"]
+requirements = ["websockets", "br-bridge>=0.3.0,<0.4"]
 # What to import to decide whether a requirement is already satisfied. pipapi
 # tries this import first and calls pip only when it fails, so a checkout
 # installed editable into Kit's Python (Omni-Utils tools/dev_link.py --driver)
