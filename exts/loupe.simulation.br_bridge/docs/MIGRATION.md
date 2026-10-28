@@ -8,7 +8,7 @@ There was no 0.2.x of this extension; the version jumps to line up with the Beck
 
 | | 0.1.0 | 0.3.0 |
 |---|---|---|
-| Where the connection is configured | `B&R Bridge / Open Bridge Settings` window; `Save` wrote to the app's persistent settings | A prim under `/PLC/` in the stage, e.g. `/PLC/PLC1`, with `bridge:driver = "br"`, `br:Host`, `br:Port` and the `bridge:*` settings; saved with the stage |
+| Where the connection is configured | `B&R Bridge / Open Bridge Settings` window; `Save` wrote to the app's persistent settings | A prim under `/PLC/` in the stage, e.g. `/PLC/PLC1`, with `bridge:driver = "br"`, `br:host`, `br:port` and the `bridge:*` settings; saved with the stage |
 | Number of PLCs | One | Any number, one prim each, Beckhoff and B&R mixed |
 | Who does the work | This extension | The framework `loupe.simulation.bridge`, enabled with this one; this extension registers the B&R driver |
 | Python API | `from loupe.simulation.br_bridge import BrBridge`, `BrBridge.Manager()` | `from loupe.simulation.bridge import Manager, get_plc, on_sample_main`; `Manager("PLC1")` takes the name of the prim under `/PLC/` |
@@ -34,11 +34,11 @@ Open the stage you use with the PLC, then either:
       def Scope "PLC1"
       {
           custom string   bridge:driver      = "br"
-          custom bool     bridge:Enable      = true
-          custom int      bridge:RefreshRate = 20
-          custom string[] bridge:Variables   = ["TestProg:counter", "TestProg:structOfStructs.var1"]
-          custom string   br:Host            = "127.0.0.1"
-          custom int      br:Port            = 8000
+          custom bool     bridge:enable      = true
+          custom int      bridge:periodMs = 20
+          custom string[] bridge:variables   = ["TestProg:counter", "TestProg:structOfStructs.var1"]
+          custom string   br:host            = "127.0.0.1"
+          custom int      br:port            = 8000
       }
   }
   ```
@@ -71,11 +71,17 @@ Everything else in the script stays the same: `register_init_callback`, `registe
 
 Code that touches the stage or the UI should prefer `on_sample_main("PLC1", callback)`: it runs on the main thread once per app update with the newest sample, where bus callbacks run on the PLC's worker thread. The framework's `docs/CONSUMING.md` has the options and the thread rules.
 
+Three behaviours to know when moving a script to the 0.3 API:
+
+- **A write is never held for a later connection.** A write while the PLC is disconnected or disabled is dropped; `queue_write` returns a handle with `error == "not connected"`. So is a write still pending when the link drops or the PLC is disabled. Write again once the `CONNECTION` event says `Connected`.
+- **A `Sample` is read-only.** `sample.values` and `sample.errors` are read-only mappings and `sample.nested` is read-only all the way down, with arrays as tuples. Copy before changing (`dict(sample.values)`, `plc_bridge.thaw(sample.nested)`).
+- **Per-symbol errors carry a code.** Each entry of `sample.errors` is a `str` with `.code`; every OMJSON symbol error (`undefined`, `not in response`, `<reason> on the last read`) is `missing`, and `sample.missing` lists them. Branch on the code, not on the text.
+
 ## Step 3 (optional): drop the Python, or the mirror
 
 If a script only existed to copy PLC values onto prims, or to write a value when something in the scene changed, it may not be needed any more. Every variable read from the PLC appears as a prim below the PLC prim, following the variable's structure (`TestProg:structOfStructs.var1` becomes `/PLC/PLC1/TestProg/structOfStructs/var1`; an array element `TestProg:arr[0]` becomes `/PLC/PLC1/TestProg/arr/_0`), with `value`, `symbol`, `write:value`, `write:pause` and `write:once` attributes. OmniGraph and the property window can read and write those directly.
 
-The mirror is on by default in 0.3 and costs a USD write per value per frame. If nothing in your app reads it, switch it off per PLC with `custom bool bridge:MirrorToUsd = false` on the prim, or mirror only what you need with `custom string[] bridge:MirrorSymbols = ["TestProg:counter"]`. From 0.4 the mirror is off by default; set `bridge:MirrorToUsd = true` on prims that rely on it.
+The mirror is on by default in 0.3 and costs a USD write per value per frame. If nothing in your app reads it, switch it off per PLC with `custom bool bridge:mirrorToUsd = false` on the prim, or mirror only what you need with `custom string[] bridge:mirrorSymbols = ["TestProg:counter"]`. From 0.4 the mirror is off by default; set `bridge:mirrorToUsd = true` on prims that rely on it.
 
 ## What still works, and until when
 

@@ -9,7 +9,7 @@ window, and checks:
   `br_bridge`;
 - the stage's two PLC prims come up under one `System`: `/PLC/PLC1` in the
   0.3.0rc1 form (`br_bridge:*` attributes, warned as deprecated) and `/PLC/BR2`
-  in the neutral form (`bridge:driver = "br"`, `br:Host`, `br:Port`);
+  in the neutral form (`bridge:driver = "br"`, `br:host`, `br:port`);
 - one daemon worker per PLC, the options setter in both spellings;
 - a script written for 0.3.0rc1 runs unchanged: `from loupe.simulation.br_bridge
   import BrBridge` (warns), `BrBridge.Manager("PLC1")` with an init callback

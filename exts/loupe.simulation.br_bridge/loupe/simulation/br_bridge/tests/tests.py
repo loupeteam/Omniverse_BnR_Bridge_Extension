@@ -37,9 +37,9 @@ class TestBrExtension(omni.kit.test.AsyncTestCase):
         self.assertIsNotNone(spec, "the extension did not register the 'br' driver")
         self.assertIs(spec.driver_class, BrDriver)
         self.assertEqual(spec.legacy_namespace, "br_bridge")
-        self.assertEqual(spec.attribute("Host"), "br:Host")
-        self.assertEqual(spec.defaults, {"Host": "127.0.0.1", "Port": 8000})
-        driver = spec.create_driver({"Host": "10.0.0.2", "Port": "8001"})
+        self.assertEqual(spec.attribute("host"), "br:host")
+        self.assertEqual(spec.defaults, {"host": "127.0.0.1", "port": 8000})
+        driver = spec.create_driver({"host": "10.0.0.2", "port": "8001"})
         self.assertEqual((driver.host, driver.port), ("10.0.0.2", 8001))
 
     async def test_pinned_library_versions_match(self):
@@ -186,9 +186,9 @@ class TestBrExtension(omni.kit.test.AsyncTestCase):
         system = get_system()
         try:
             runtime = system.add_component("BR1", {
-                "bridge:driver": "br", "br:Host": "127.0.0.1", "br:Port": mock.port,
-                "bridge:Enable": True, "bridge:RefreshRate": 20,
-                "bridge:Variables": ["TestProg:counter"], "bridge:MirrorToUsd": False})
+                "bridge:driver": "br", "br:host": "127.0.0.1", "br:port": mock.port,
+                "bridge:enable": True, "bridge:periodMs": 20,
+                "bridge:variables": ["TestProg:counter"], "bridge:mirrorToUsd": False})
             for _ in range(300):
                 if runtime.plc.latest() is not None:
                     break

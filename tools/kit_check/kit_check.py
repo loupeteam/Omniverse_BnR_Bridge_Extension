@@ -204,7 +204,7 @@ async def main():
         fails.append("expected one daemon worker per PLC")
     if mock is not None:
         legacy_rt.options = {"br_bridge:Port": mock.port}
-        neutral_rt.options = {"br:Port": mock.port}
+        neutral_rt.options = {"br:port": mock.port}
         print("  port         -> {}: PLC1 driver.port={} BR2 driver.port={}".format(
             mock.port, legacy_rt.driver.port, neutral_rt.driver.port))
         if legacy_rt.driver.port != mock.port or neutral_rt.driver.port != mock.port:
