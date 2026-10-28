@@ -67,7 +67,7 @@ from loupe.simulation.bridge import Manager
 br_bridge = Manager("PLC1")
 ```
 
-Everything else in the script stays the same: `register_init_callback`, `register_data_callback`, `add_cyclic_read_variables`, `write_variable`, and the `event.payload["data"]` shape in the data callback are unchanged. `write_variables(dict)` is new for writing several values in one request.
+Everything else in the script stays the same: `register_init_callback`, `register_data_callback`, `add_cyclic_read_variables`, `write_variable`, and the `event.payload["data"]` shape in the data callback are unchanged. `write_variables(dict)` is new for writing several values in one request. One behaviour of `write_variable` changes for unchanged scripts: a write sent before the PLC is connected (or while it is disabled) is dropped instead of held, with one warning in the log naming the symbols (see below).
 
 Code that touches the stage or the UI should prefer `on_sample_main("PLC1", callback)`: it runs on the main thread once per app update with the newest sample, where bus callbacks run on the PLC's worker thread. The framework's `docs/CONSUMING.md` has the options and the thread rules.
 
