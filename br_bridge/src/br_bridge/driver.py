@@ -17,7 +17,12 @@
   in a readresponse. A writeresponse does not say so: OMJSON 2.0.0 echoes the
   request, unknown symbols included, so a write to a symbol that does not exist
   looks written. The driver flags such a write only when the symbol's most
-  recent read failed. OMJSON is deprecated upstream and will not be fixed, so
+  recent read failed.
+
+  Error codes (plc_bridge.SymbolError): "undefined", "not in response" and
+  "<reason> on the last read" are all ERROR_MISSING, the PLC does not know the
+  symbol. OMJSON has no reply that says a known symbol refused a value, so a
+  B&R write never reports ERROR_REJECTED today. OMJSON is deprecated upstream and will not be fixed, so
   this stays a known gap. A write the server cannot parse gets no reply at all, so
   it times out and the link is reported lost.
 """
@@ -31,7 +36,7 @@ from typing import Any, Mapping, Optional, Sequence
 
 import websockets
 
-from plc_bridge import PlcDriver, ReadResult
+from plc_bridge import ERROR_MISSING, PlcDriver, ReadResult, SymbolError
 
 # Before Python 3.11 the concurrent.futures and asyncio timeouts are not the
 # builtin TimeoutError; _call turns all three into the builtin one.
@@ -175,9 +180,9 @@ class BrDriver(PlcDriver):
                 returned.update(entry)
         for symbol in symbols:
             if symbol not in returned:
-                result.errors[symbol] = NOT_IN_RESPONSE
+                result.errors[symbol] = SymbolError(NOT_IN_RESPONSE, ERROR_MISSING)
             elif returned[symbol] == UNDEFINED:
-                result.errors[symbol] = UNDEFINED
+                result.errors[symbol] = SymbolError(UNDEFINED, ERROR_MISSING)
             else:
                 result.values[symbol] = returned[symbol]
                 self._read_errors.pop(symbol, None)
@@ -193,12 +198,12 @@ class BrDriver(PlcDriver):
         errors = {}
         for symbol in values:
             if symbol not in returned:
-                errors[symbol] = NOT_IN_RESPONSE
+                errors[symbol] = SymbolError(NOT_IN_RESPONSE, ERROR_MISSING)
             elif returned[symbol] == UNDEFINED:
-                errors[symbol] = UNDEFINED
+                errors[symbol] = SymbolError(UNDEFINED, ERROR_MISSING)
             elif symbol in self._read_errors:
                 # OMJSON echoes unknown symbols as written; the last read knows better.
-                errors[symbol] = f"{self._read_errors[symbol]} on the last read"
+                errors[symbol] = SymbolError(f"{self._read_errors[symbol].text} on the last read", ERROR_MISSING)
         return errors
 
     # endregion
