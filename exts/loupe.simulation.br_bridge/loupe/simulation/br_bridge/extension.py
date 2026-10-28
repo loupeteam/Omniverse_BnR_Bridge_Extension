@@ -14,7 +14,7 @@ Extension entry point: register `br_bridge.BrDriver` with the framework's
 driver registry on startup, unregister it on shutdown.
 
 The framework then builds a runtime for every prim carrying
-`bridge:driver = "br"` (options `br:Host`, `br:Port`) and, through the legacy
+`bridge:driver = "br"` (options `br:host`, `br:port`) and, through the legacy
 namespace, for every 0.3.0rc1 prim carrying `br_bridge:*` attributes, with a
 deprecation warning. While its `legacyBusNames` setting is on it also pushes
 and accepts the `loupe.simulation.br_bridge.*` bus names. Its window builds a
@@ -31,7 +31,7 @@ DRIVER_NAME = "br"
 LEGACY_NAMESPACE = "br_bridge"
 TITLE = "B&R (OMJSON)"
 
-OPTIONS = [Option("Host", "str", "127.0.0.1", "PLC IP Address"), Option("Port", "int", 8000, "PLC Port")]
+OPTIONS = [Option("host", "str", "127.0.0.1", "PLC IP Address"), Option("port", "int", 8000, "PLC Port")]
 
 
 class Extension(omni.ext.IExt):

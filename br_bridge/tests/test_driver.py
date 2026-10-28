@@ -168,7 +168,7 @@ def test_runtime_drives_the_br_driver_and_nests_on_colon_and_dot(driver):
     plc.scan()
     assert samples[0].nested == {
         "gCounter": 7,
-        "TestProg": {"axis": {"position": 12.5}, "list": [None, None, 99]},
+        "TestProg": {"axis": {"position": 12.5}, "list": (None, None, 99)},
     }
     handle = plc.queue_write("gCounter", 42)
     plc.scan()
@@ -188,3 +188,57 @@ def test_runtime_polls_in_the_background(driver):
     assert got.wait(3)
     plc.stop()
     assert not driver.is_connected()
+
+
+# region - symbol error codes
+
+def test_read_errors_are_coded_missing(driver):
+    from plc_bridge import ERROR_MISSING
+    driver.connect()
+    result = driver.read(["gCounter", "nope", "undefThing"])
+    assert {name: e.code for name, e in result.errors.items()} == {"nope": ERROR_MISSING, "undefThing": ERROR_MISSING}
+
+
+def test_write_errors_are_coded_missing(driver, server):
+    from plc_bridge import ERROR_MISSING
+    driver.connect()
+    driver.read(["nope"])
+    errors = driver.write({"gCounter": 1, "nope": 1, "undefThing": 2})
+    assert {name: e.code for name, e in errors.items()} == {"nope": ERROR_MISSING, "undefThing": ERROR_MISSING}
+    assert errors["nope"] == NOT_IN_RESPONSE + " on the last read"
+
+
+def test_a_reconnect_forgets_the_last_connections_read_errors(driver, server):
+    # The PLC was re-downloaded with the symbol while the link was down: the
+    # first write after the reconnect must not be reported missing.
+    driver.connect()
+    assert "nope" in driver.read(["nope"]).errors
+    server.variables["nope"] = 0
+    driver.connect()
+    assert driver.write({"nope": 1}) == {}
+
+
+def test_a_write_left_out_of_the_response_is_missing():
+    from plc_bridge import ERROR_MISSING
+    server = MockOmjson(VARIABLES, echo_unknown=False).start()
+    d = BrDriver("127.0.0.1", server.port, timeout=2.0)
+    try:
+        d.connect()
+        errors = d.write({"gCounter": 3, "ghost": 1})
+        assert errors == {"ghost": NOT_IN_RESPONSE}
+        assert errors["ghost"].code == ERROR_MISSING
+    finally:
+        d.close()
+        server.stop()
+
+
+def test_sample_missing_lists_unknown_symbols(driver):
+    plc = PlcRuntime(driver, name="BR", enabled=True)
+    plc.set_read_variables(["gCounter", "nope", "undefThing"])
+    plc.scan()
+    assert plc.latest().missing == ("nope", "undefThing")
+    plc.enabled = False
+    plc.scan()
+    plc.stop()
+
+# endregion
