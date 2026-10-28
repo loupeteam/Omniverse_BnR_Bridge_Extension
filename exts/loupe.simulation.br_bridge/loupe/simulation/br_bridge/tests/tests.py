@@ -38,6 +38,8 @@ class TestBrExtension(omni.kit.test.AsyncTestCase):
         self.assertIs(spec.driver_class, BrDriver)
         self.assertEqual(spec.legacy_namespace, "br_bridge")
         self.assertEqual(spec.attribute("host"), "br:host")
+        self.assertEqual(spec.legacy_attribute("host"), "br_bridge:Host")
+        self.assertEqual(spec.legacy_attribute("port"), "br_bridge:Port")
         self.assertEqual(spec.defaults, {"host": "127.0.0.1", "port": 8000})
         driver = spec.create_driver({"host": "10.0.0.2", "port": "8001"})
         self.assertEqual((driver.host, driver.port), ("10.0.0.2", 8001))
@@ -92,8 +94,17 @@ class TestBrExtension(omni.kit.test.AsyncTestCase):
         await omni.usd.get_context().new_stage_async()
         from loupe.simulation.br_bridge import BrBridge
 
+        import carb.settings
         system = BrBridge.get_system()
         self.assertIsNone(system.get_component("PLC1"))
+        # The 0.1.0 persistent settings seed the in-memory PLC.
+        settings = carb.settings.get_settings()
+        saved = {"PLC_IP_ADDRESS": "10.0.0.7", "PLC_PORT": 8123, "REFRESH_RATE": 40, "ENABLE_COMMUNICATION": False}
+        previous = {}
+        for key, value in saved.items():
+            path = "/persistent/loupe.simulation.br_bridge/" + key
+            previous[path] = settings.get(path)
+            settings.set(path, value)
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
             manager = BrBridge.Manager()
@@ -102,12 +113,20 @@ class TestBrExtension(omni.kit.test.AsyncTestCase):
             runtime = system.get_component("PLC1")
             self.assertIsNotNone(runtime)
             self.assertEqual(runtime.driver_name, "br")
+            self.assertEqual((runtime.driver.host, runtime.driver.port), ("10.0.0.7", 8123))
+            self.assertEqual(runtime.refresh_rate, 40)
+            self.assertFalse(runtime.enable_communication)
             layer = omni.usd.get_context().get_stage().GetRootLayer()
             self.assertIsNone(layer.GetPrimAtPath("/PLC/PLC1"), "the legacy PLC must not be authored")
         finally:
             manager.cleanup()
             BrBridge._release()
             system.remove_component("PLC1")
+            for path, value in previous.items():
+                if value is None:
+                    settings.destroy_item(path)
+                else:
+                    settings.set(path, value)
 
     async def test_no_name_manager_plc1_survives_rescans(self):
         """Stage open, the window's Refresh and a driver registration drop prim-less components."""

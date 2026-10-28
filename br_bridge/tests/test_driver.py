@@ -208,6 +208,16 @@ def test_write_errors_are_coded_missing(driver, server):
     assert errors["nope"] == NOT_IN_RESPONSE + " on the last read"
 
 
+def test_a_reconnect_forgets_the_last_connections_read_errors(driver, server):
+    # The PLC was re-downloaded with the symbol while the link was down: the
+    # first write after the reconnect must not be reported missing.
+    driver.connect()
+    assert "nope" in driver.read(["nope"]).errors
+    server.variables["nope"] = 0
+    driver.connect()
+    assert driver.write({"nope": 1}) == {}
+
+
 def test_a_write_left_out_of_the_response_is_missing():
     from plc_bridge import ERROR_MISSING
     server = MockOmjson(VARIABLES, echo_unknown=False).start()
@@ -229,5 +239,6 @@ def test_sample_missing_lists_unknown_symbols(driver):
     assert plc.latest().missing == ("nope", "undefThing")
     plc.enabled = False
     plc.scan()
+    plc.stop()
 
 # endregion

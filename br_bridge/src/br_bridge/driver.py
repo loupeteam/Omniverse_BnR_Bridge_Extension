@@ -22,9 +22,9 @@
   Error codes (plc_bridge.SymbolError): "undefined", "not in response" and
   "<reason> on the last read" are all ERROR_MISSING, the PLC does not know the
   symbol. OMJSON has no reply that says a known symbol refused a value, so a
-  B&R write never reports ERROR_REJECTED today. OMJSON is deprecated upstream and will not be fixed, so
-  this stays a known gap. A write the server cannot parse gets no reply at all, so
-  it times out and the link is reported lost.
+  B&R write never reports ERROR_REJECTED today. OMJSON is deprecated upstream
+  and will not be fixed, so this stays a known gap. A write the server cannot
+  parse gets no reply at all, so it times out and the link is reported lost.
 """
 
 import asyncio
@@ -128,6 +128,9 @@ class BrDriver(PlcDriver):
     def connect(self) -> None:
         self.disconnect()
         self._transport_lost = False
+        # The PLC may have been re-downloaded while the link was down; what the
+        # last connection could not read says nothing about this one.
+        self._read_errors.clear()
         self._ws = self._call(self._open(), timeout=self.timeout + 1)
 
     async def _open(self):
@@ -203,7 +206,8 @@ class BrDriver(PlcDriver):
                 errors[symbol] = SymbolError(UNDEFINED, ERROR_MISSING)
             elif symbol in self._read_errors:
                 # OMJSON echoes unknown symbols as written; the last read knows better.
-                errors[symbol] = SymbolError(f"{self._read_errors[symbol].text} on the last read", ERROR_MISSING)
+                errors[symbol] = SymbolError(f"{self._read_errors[symbol].text} on the last read",
+                                             ERROR_MISSING)
         return errors
 
     # endregion

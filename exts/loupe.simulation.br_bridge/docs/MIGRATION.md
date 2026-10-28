@@ -35,7 +35,7 @@ Open the stage you use with the PLC, then either:
       {
           custom string   bridge:driver      = "br"
           custom bool     bridge:enable      = true
-          custom int      bridge:periodMs = 20
+          custom int      bridge:periodMs    = 20
           custom string[] bridge:variables   = ["TestProg:counter", "TestProg:structOfStructs.var1"]
           custom string   br:host            = "127.0.0.1"
           custom int      br:port            = 8000
