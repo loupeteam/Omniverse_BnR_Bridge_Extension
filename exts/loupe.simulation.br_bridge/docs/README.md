@@ -29,11 +29,11 @@ def Scope "PLC"
     def Scope "PLC1"
     {
         custom string   bridge:driver      = "br"
-        custom bool     bridge:Enable      = true
-        custom int      bridge:RefreshRate = 20
-        custom string[] bridge:Variables   = ["TestProg:counter", "TestProg:structOfStructs.var1"]
-        custom string   br:Host            = "127.0.0.1"
-        custom int      br:Port            = 8000
+        custom bool     bridge:enable      = true
+        custom int      bridge:periodMs    = 20
+        custom string[] bridge:variables   = ["TestProg:counter", "TestProg:structOfStructs.var1"]
+        custom string   br:host            = "127.0.0.1"
+        custom int      br:port            = 8000
     }
 }
 ```
@@ -41,13 +41,13 @@ def Scope "PLC"
 | Attribute | Type | Default | Meaning |
 |---|---|---|---|
 | `bridge:driver` | string | | `"br"` for this extension |
-| `br:Host` | string | `127.0.0.1` | IP address of the PLC |
-| `br:Port` | int | `8000` | Port of the OMJSON `jsonWebSocketServer` |
-| `bridge:Enable` | bool | `false` | Enable or disable the client |
-| `bridge:RefreshRate` | int | `20` | Cyclic read period in milliseconds |
-| `bridge:Variables` | string[] | `[]` | Variables to read cyclically |
-| `bridge:MirrorToUsd` | bool | `true` | Mirror the values as prims under the PLC prim |
-| `bridge:MirrorSymbols` | string[] | `[]` | Mirror only these variables; empty means all |
+| `br:host` | string | `127.0.0.1` | IP address of the PLC |
+| `br:port` | int | `8000` | Port of the OMJSON `jsonWebSocketServer` |
+| `bridge:enable` | bool | `false` | Enable or disable the client |
+| `bridge:periodMs` | int | `20` | Cyclic read period in milliseconds |
+| `bridge:variables` | string[] | `[]` | Variables to read cyclically |
+| `bridge:mirrorToUsd` | bool | `true` | Mirror the values as prims under the PLC prim |
+| `bridge:mirrorSymbols` | string[] | `[]` | Mirror only these variables; empty means all |
 
 The framework's README has the full schema, the `autoConnect` safety setting, and the mirror layout. Prims written by 0.3.0rc1 (`br_bridge:Host`, `br_bridge:Port`, `br_bridge:Enable`, `br_bridge:RefreshRate`, `br_bridge:Variables` as a comma-separated string) still load, with a deprecation warning; see [MIGRATION.md](MIGRATION.md).
 

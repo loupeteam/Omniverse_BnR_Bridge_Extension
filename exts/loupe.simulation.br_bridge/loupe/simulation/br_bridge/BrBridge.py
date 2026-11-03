@@ -43,8 +43,8 @@ EVENT_TYPE_ENABLE = Manager_Events.EVENT_TYPE_ENABLE
 
 LEGACY_PLC_NAME = "PLC1"  # what a 0.1.0 script gets from Manager() with no name
 # Where 0.1.0 stored its connection, as framework option keys. Read, never written.
-_LEGACY_SETTINGS = {"PLC_IP_ADDRESS": "br:Host", "PLC_PORT": "br:Port",
-                    "REFRESH_RATE": "bridge:RefreshRate", "ENABLE_COMMUNICATION": "bridge:Enable"}
+_LEGACY_SETTINGS = {"PLC_IP_ADDRESS": "br:host", "PLC_PORT": "br:port",
+                    "REFRESH_RATE": "bridge:periodMs", "ENABLE_COMMUNICATION": "bridge:enable"}
 
 
 class _LegacyPlc:

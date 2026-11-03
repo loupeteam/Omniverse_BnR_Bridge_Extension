@@ -14,9 +14,13 @@ UNDEFINED = "undefined"
 
 
 class MockOmjson:
-    def __init__(self, variables: dict, silent: bool = False):
+    def __init__(self, variables: dict, silent: bool = False, echo_unknown: bool = True):
         self.variables = dict(variables)
         self.silent = silent          # accept connections, never reply
+        # OMJSON 2.0.0 echoes unknown symbols in a writeresponse; False leaves
+        # them out instead, so the driver's "not in response" path on a write
+        # stays tested.
+        self.echo_unknown = echo_unknown
         self.requests = []
         self.port = None
         self._loop = None
@@ -51,7 +55,7 @@ class MockOmjson:
                         data[symbol] = value
                     elif symbol.startswith("undef"):
                         data[symbol] = UNDEFINED
-                    else:
+                    elif self.echo_unknown:
                         data[symbol] = value
                 await websocket.send(json.dumps({"type": "writeresponse", "data": data}))
 
